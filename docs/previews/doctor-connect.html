@@ -1,0 +1,75 @@
+<div id="mv-doctor-preview" aria-label="MediVoice doctor connection preview">
+  <style>
+    #mv-doctor-preview { --mv-bg:light-dark(#f4f8f7,#172a28);--mv-panel:light-dark(#ffffff,#213733);--mv-ink:light-dark(#213d3a,#edf7f4);--mv-muted:light-dark(#526e69,#b3cbc4);--mv-line:light-dark(#dbe6e2,#45615a);--mv-soft:light-dark(#e7f3ee,#2d4942);--mv-brand:light-dark(#28766b,#93d9c4);--mv-onbrand:light-dark(#ffffff,#15372e);--mv-warn:light-dark(#fff3de,#493b26);color:var(--mv-ink);font:16px/1.4 system-ui,sans-serif; }
+    #mv-doctor-preview * {box-sizing:border-box}
+    #mv-doctor-preview .mv-phone {max-width:410px;margin:auto;border:5px solid var(--mv-ink);border-radius:32px;background:var(--mv-bg);overflow:hidden}
+    #mv-doctor-preview header {display:flex;align-items:center;gap:12px;padding:17px 18px;background:var(--mv-panel);border-bottom:1px solid var(--mv-line)}
+    #mv-doctor-preview button,#mv-doctor-preview input {font:inherit}
+    #mv-doctor-preview button {cursor:pointer;color:inherit}
+    #mv-doctor-preview .mv-back {border:0;background:transparent;width:40px;height:44px;display:grid;place-items:center;padding:0}
+    #mv-doctor-preview .mv-logo {font-size:22px;font-weight:700;color:var(--mv-brand)}
+    #mv-doctor-preview .mv-sub {font-size:13px;color:var(--mv-muted)}
+    #mv-doctor-preview .mv-badge {margin-left:auto;background:var(--mv-warn);padding:5px 9px;border-radius:8px;font-size:12px;white-space:nowrap}
+    #mv-doctor-preview main {padding:16px}
+    #mv-doctor-preview h2 {margin:0 0 4px;font-size:23px;line-height:1.2;font-weight:700}
+    #mv-doctor-preview p {margin:0 0 12px}
+    #mv-doctor-preview .mv-location {display:flex;align-items:center;gap:5px;font-size:14px;color:var(--mv-muted);margin-bottom:12px}
+    #mv-doctor-preview .mv-map {height:154px;position:relative;border-radius:15px;overflow:hidden;background:var(--mv-soft);border:1px solid var(--mv-line)}
+    #mv-doctor-preview .mv-road {position:absolute;background:var(--mv-panel);border:1px solid var(--mv-line);width:120%;height:15px;left:-10%;top:65px;transform:rotate(-24deg)}
+    #mv-doctor-preview .mv-road.two {transform:rotate(42deg);top:85px}
+    #mv-doctor-preview .mv-road.three {transform:rotate(90deg);left:10%;top:38px}
+    #mv-doctor-preview .mv-pin {position:absolute;z-index:1;width:44px;height:44px;border-radius:50%;background:var(--mv-brand);color:var(--mv-onbrand);border:3px solid var(--mv-panel);font-weight:700}
+    #mv-doctor-preview .mv-pin.one {left:16%;top:16px} #mv-doctor-preview .mv-pin.two {left:57%;top:30px} #mv-doctor-preview .mv-pin.three {left:76%;top:92px}
+    #mv-doctor-preview .mv-you {position:absolute;left:29%;top:107px;font-size:12px;background:var(--mv-panel);padding:2px 8px;border-radius:7px}
+    #mv-doctor-preview .mv-map-label {position:absolute;left:7px;bottom:6px;font-size:11px;color:var(--mv-muted)}
+    #mv-doctor-preview .mv-hint {font-size:13px;color:var(--mv-muted);margin:9px 0}
+    #mv-doctor-preview .mv-doctor {width:100%;background:var(--mv-panel);border:1px solid var(--mv-line);border-radius:13px;padding:11px;display:flex;align-items:center;gap:11px;text-align:left;margin-bottom:8px;min-height:68px}
+    #mv-doctor-preview .mv-number {display:grid;place-items:center;flex:none;width:34px;height:38px;border-radius:10px;background:var(--mv-soft);color:var(--mv-brand);font-weight:700}
+    #mv-doctor-preview .mv-doctor-name {display:block;font-weight:600;font-size:16px} #mv-doctor-preview .mv-meta {font-size:13px;color:var(--mv-muted);display:block}
+    #mv-doctor-preview .mv-distance {margin-left:auto;font-size:13px;white-space:nowrap;text-align:right;color:var(--mv-muted)}
+    #mv-doctor-preview .mv-primary {display:flex;align-items:center;justify-content:center;gap:9px;width:100%;min-height:48px;padding:10px 12px;background:var(--mv-brand);color:var(--mv-onbrand);border:0;border-radius:12px;font-weight:600}
+    #mv-doctor-preview .mv-secondary {background:var(--mv-panel);border:1px solid var(--mv-line);border-radius:12px;padding:10px 12px;min-height:46px}
+    #mv-doctor-preview .mv-actions {display:flex;gap:8px;margin-top:12px} #mv-doctor-preview .mv-actions>* {flex:1}
+    #mv-doctor-preview .mv-note {text-align:center;color:var(--mv-muted);font-size:12px;margin:8px 0 0}
+    #mv-doctor-preview .mv-selected {background:var(--mv-panel);border:1px solid var(--mv-line);border-radius:14px;padding:14px;margin:14px 0}
+    #mv-doctor-preview .mv-bubble {background:var(--mv-soft);border-radius:14px 14px 14px 3px;padding:15px;margin:16px 0;font-size:18px}
+    #mv-doctor-preview .mv-step {font-size:12px;color:var(--mv-muted);margin-top:16px}
+    #mv-doctor-preview input {width:100%;min-height:48px;background:var(--mv-panel);color:var(--mv-ink);border:1px solid var(--mv-line);padding:10px;border-radius:10px;margin:6px 0}
+    #mv-doctor-preview label {display:block;font-size:14px}
+    #mv-doctor-preview dl {display:grid;grid-template-columns:90px 1fr;gap:10px;margin:0;font-size:15px} #mv-doctor-preview dt {color:var(--mv-muted)} #mv-doctor-preview dd {margin:0;overflow-wrap:anywhere}
+    #mv-doctor-preview .mv-warning {background:var(--mv-warn);padding:12px;border-radius:10px;font-size:13px;margin-top:12px}
+    #mv-doctor-preview .mv-footer {padding:10px 16px 14px;border-top:1px solid var(--mv-line);font-size:11px;text-align:center;color:var(--mv-muted)}
+    #mv-doctor-preview [hidden] {display:none!important}
+    #mv-doctor-preview .mv-options {display:grid;gap:8px}
+  </style>
+  <div class="mv-phone">
+    <header><button type="button" class="mv-back" aria-label="Back to nearby doctors" data-action="home"><i data-lucide="arrow-left" aria-hidden="true"></i></button><div><div class="mv-logo">MediVoice</div><div class="mv-sub">Find care near you</div></div><span class="mv-badge">DEMO</span></header>
+    <main id="mv-screen" aria-live="polite"></main>
+    <div class="mv-footer">Fictional providers, location and distances · No real bookings</div>
+  </div>
+  <script>
+  (()=>{
+    const root=document.getElementById('mv-doctor-preview');
+    const screen=root.querySelector('#mv-screen');
+    const doctors=[{name:'Dr. Asha · Demo',clinic:'Demo Green Clinic',distance:'0.8',channel:'WhatsApp'},{name:'Dr. Ravi · Demo',clinic:'Demo Family Clinic',distance:'1.2',channel:'Phone'},{name:'Dr. Meera · Demo',clinic:'Demo Care Centre',distance:'1.7',channel:'Booking page'}];
+    const state={view:'search',selected:0,step:0,date:'Tomorrow',time:'10:00 AM',patient:'Demo patient',largeText:false};
+    const escape=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    function selection(){const d=doctors[state.selected];return '<div class="mv-selected"><strong>'+escape(d.name)+'</strong><div class="mv-meta">General physician · '+escape(d.clinic)+'</div></div>';}
+    function render(){
+      root.style.fontSize=state.largeText?'18px':'16px';
+      const d=doctors[state.selected];
+      if(state.view==='search') screen.innerHTML='<h2>Doctors near you</h2><div class="mv-location"><i data-lucide="map-pin" aria-hidden="true"></i> Demo neighbourhood</div><div class="mv-map" aria-label="Schematic demo map with three fictional doctor locations"><div class="mv-road"></div><div class="mv-road two"></div><div class="mv-road three"></div>'+doctors.map((x,i)=>'<button type="button" class="mv-pin '+['one','two','three'][i]+'" data-select="'+i+'" aria-label="Select '+escape(x.name)+'">'+(i+1)+'</button>').join('')+'<span class="mv-you">● You</span><span class="mv-map-label">Illustrative map only</span></div><p class="mv-hint">Tap a doctor or select by voice.</p>'+doctors.map((x,i)=>'<button type="button" class="mv-doctor" data-select="'+i+'"><span class="mv-number">'+(i+1)+'</span><span><span class="mv-doctor-name">'+escape(x.name)+'</span><span class="mv-meta">General physician</span></span><span class="mv-distance">~'+x.distance+' km<br>away</span></button>').join('')+'<button type="button" class="mv-primary" data-action="voice"><i data-lucide="mic" aria-hidden="true"></i> Press to speak</button><p class="mv-note">Preview simulates voice—microphone is off.</p>';
+      else if(state.view==='voice') screen.innerHTML='<h2>Voice selection</h2><div class="mv-bubble">“Book the second doctor.”</div><p class="mv-hint">Choose a sample phrase to preview the response.</p><div class="mv-options">'+doctors.map((x,i)=>'<button type="button" class="mv-secondary" data-select="'+i+'">“Book the '+['first','second','third'][i]+' doctor”</button>').join('')+'</div>';
+      else if(state.view==='select') screen.innerHTML='<h2>Your selected doctor</h2>'+selection()+'<div class="mv-bubble">You selected '+escape(d.name)+'. Would you like to book?</div><button type="button" class="mv-primary" data-action="book">Yes, book an appointment</button><div class="mv-actions"><button type="button" class="mv-secondary" data-action="home">Choose another doctor</button></div><p class="mv-note">In the app, you can also answer by voice.</p>';
+      else if(state.view==='details') {const fields=['date','time','patient'];const labels=['Preferred date','Preferred time','Patient name'];const questions=['Which date would you prefer?','What time would suit you?','What name should I use?'];screen.innerHTML='<h2>Appointment request</h2>'+selection()+'<div class="mv-step">DETAIL '+(state.step+1)+' OF 3</div><div class="mv-bubble">'+questions[state.step]+'</div><form id="mv-form"><label for="mv-answer">'+labels[state.step]+'</label><input id="mv-answer" name="answer" required maxlength="80" value="'+escape(state[fields[state.step]])+'"><button type="submit" class="mv-primary">Continue</button></form><p class="mv-note">Voice or touch · Preferred time, not a confirmed slot</p>';}
+      else if(state.view==='review') {const action=d.channel==='WhatsApp'?'Preview WhatsApp request':d.channel==='Phone'?'Preview call clinic':'Preview appointment page';screen.innerHTML='<h2>Check your request</h2>'+selection()+'<div class="mv-selected"><dl><dt>Patient</dt><dd>'+escape(state.patient)+'</dd><dt>Date</dt><dd>'+escape(state.date)+'</dd><dt>Time</dt><dd>'+escape(state.time)+'</dd></dl></div><div class="mv-warning">'+(d.channel==='WhatsApp'?'WhatsApp contact available in this demo. You would review the message and press Send.':d.channel==='Phone'?'No verified WhatsApp contact. Next option: call the clinic. Demo number: +91 XXXXX XXXXX.':'No WhatsApp or phone contact. Next option: the verified appointment page.')+'</div><div class="mv-actions"><button type="button" class="mv-primary" data-action="handoff">'+action+'</button></div><div class="mv-actions"><button type="button" class="mv-secondary" data-action="book">Edit details</button></div><p class="mv-note">Not booked. The clinic must confirm availability.</p>';}
+      else screen.innerHTML='<h2>'+escape(d.channel)+' preview</h2>'+selection()+(d.channel==='WhatsApp'?'<div class="mv-bubble">Hello, I’d like to request an appointment with '+escape(d.name)+' for '+escape(state.patient)+' on '+escape(state.date)+', preferably at '+escape(state.time)+'. Please confirm availability.</div>':'<div class="mv-bubble">'+(d.channel==='Phone'?'The phone dialler would open with the clinic’s number.':'The clinic’s verified appointment page would open.')+'</div>')+'<div class="mv-warning">Preview only. No message sent, call placed or appointment booked.</div><div class="mv-actions"><button type="button" class="mv-primary" data-action="home">Back to doctors</button></div>';
+      if(globalThis.lucide) globalThis.lucide.createIcons({attrs:{width:20,height:20}});
+    }
+    root.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.select!==undefined){state.selected=Number(b.dataset.select);state.view='select';}else {const a=b.dataset.action;if(!a)return;if(a==='home')state.view='search';if(a==='voice')state.view='voice';if(a==='book'){state.view='details';state.step=0;}if(a==='handoff')state.view='handoff';}render();});
+    root.addEventListener('submit',e=>{e.preventDefault();const value=root.querySelector('#mv-answer').value.trim();if(!value)return;state[['date','time','patient'][state.step]]=value;if(state.step<2)state.step++;else state.view='review';render();});
+    render();
+    if(globalThis.Tweak){const t=new Tweak({container:root,onChange:render});t.addSelect(state,'view',{label:'Preview screen',options:[{label:'Nearby doctors',value:'search'},{label:'Selected doctor',value:'select'},{label:'Appointment details',value:'details'},{label:'Confirm request',value:'review'}]});}
+  })();
+  </script>
+</div>

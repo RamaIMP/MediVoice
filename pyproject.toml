@@ -1,0 +1,25 @@
+[project]
+name = "medivoice"
+version = "0.1.0"
+requires-python = ">=3.11,<3.14"
+dependencies = [
+  "fastapi>=0.115,<1", "uvicorn>=0.34,<1", "httpx>=0.28,<1",
+  "python-dotenv>=1.0,<2", "pydantic-settings>=2.7,<3",
+  "livekit-agents[assemblyai,elevenlabs,silero]~=1.6.7",
+  "livekit-api>=1.2,<2",
+]
+
+[dependency-groups]
+dev = ["pytest>=8,<10", "pytest-asyncio>=0.25,<2", "ruff>=0.11"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+pythonpath = ["."]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+extend-exclude = ["medivoice_env"]
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "I"]

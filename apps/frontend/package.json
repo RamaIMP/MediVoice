@@ -1,0 +1,9 @@
+{
+  "name": "medivoice-frontend",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {"dev": "vite --host 127.0.0.1", "build": "vite build", "preview": "vite preview", "test": "node --test src/*.test.js"},
+  "dependencies": {"react": "^19.1.0", "react-dom": "^19.1.0", "livekit-client": "^2.15.0", "lucide-react": "^0.468.0"},
+  "devDependencies": {"vite": "^7.0.0", "@vitejs/plugin-react": "^4.5.0"}
+}

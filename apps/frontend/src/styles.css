@@ -1,0 +1,198 @@
+:root {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+  color: #193d3a;
+  background: #e9f0ef;
+  font-size: 18px;
+  line-height: 1.55;
+  font-synthesis: none;
+}
+* { box-sizing: border-box; }
+body { margin: 0; }
+button, input { font: inherit; }
+button { cursor: pointer; touch-action: manipulation; }
+button:disabled { cursor: not-allowed; background: #e0e4e1; color: #505b55; border-color: #b0b9b3; }
+button:focus-visible, input:focus-visible, summary:focus-visible { outline: 3px solid #145b94; outline-offset: 4px; }
+[hidden] { display: none !important; }
+.app-shell { width: 100%; max-width: 440px; min-height: 100dvh; margin: auto; background: #f6f9f8; }
+header { padding: calc(18px + env(safe-area-inset-top)) 20px 18px; background: white; border-bottom: 1px solid #e3ece9; }
+.brand-row { display: flex; gap: 11px; align-items: center; }
+.brand-mark { display: grid; place-items: center; width: 46px; height: 46px; border-radius: 14px; background: #087e80; color: white; flex-shrink: 0; }
+.brand { font-size: 25px; letter-spacing: -.7px; font-weight: 750; color: #086b6b; }
+header p { margin: 0; font-size: 14px; color: #526c68; }
+.demo-badge { margin-left: auto; color: #795328; background: #fff3df; border-radius: 7px; padding: 4px 9px; font-size: 13px; font-weight: 600; }
+main { padding: 0 16px calc(24px + env(safe-area-inset-bottom)); }
+.welcome { margin: 0 -16px 18px; padding: 22px 20px; background: #e5f3ef; border-bottom: 1px solid #d5e8e1; }
+h1 { font-size: 28px; letter-spacing: -.7px; line-height: 1.3; margin: 0 0 8px; font-weight: 700; }
+h2 { font-size: 23px; letter-spacing: -.5px; line-height: 1.4; margin: 0; }
+p { margin: 12px 0; }
+.intro { margin: 0; font-size: 17px; color: #446660; max-width: 340px; }
+.step { padding: 20px 18px; margin-bottom: 16px; border: 1px solid #dce7e3; border-radius: 18px; background: white; box-shadow: 0 3px 12px #274f3f05; }
+.step-heading > div { min-width: 0; }
+.step-heading { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 21px; }
+.step-number { display: grid; place-items: center; min-width: 36px; height: 36px; background: #e7f3ef; color: #086e68; border-radius: 11px; font-size: 18px; font-weight: 750; }
+.step-heading p { font-size: 16px; line-height: 1.5; color: #526b65; margin: 4px 0 0; }
+.talk-step .step-number { background: #fff0df; color: #9b5a20; }
+.upload-actions { display: grid; gap: 12px; }
+button { min-height: 58px; padding: 14px 16px; display: flex; align-items: center; justify-content: center; gap: 12px; border: 1px solid #89aaa1; border-radius: 12px; background: white; color: #185b52; font-size: 19px; font-weight: 650; }
+.photo-button { background: #edf7f3; border-color: #b1d2c6; }
+.file-button { border-color: #d4e1dc; }
+button svg { flex-shrink: 0; }
+button:hover:not(:disabled) { background: #edf3ef; }
+.call-button { width: 100%; min-height: 68px; margin-top: 20px; background: #087e80; border-color: #087e80; color: white; font-size: 22px; box-shadow: 0 4px 10px #087e801a; }
+.call-button:hover:not(:disabled) { background: #066768; }
+.call-button.end { background: #a3342d; border-color: #a3342d; color: white; }
+.call-button.end:hover { background: #842720; }
+.call-button:disabled { background: #e0e4e1; color: #505b55; border-color: #b0b9b3; }
+.notice { background: #fffaef; border: 1px solid #efe4ce; border-radius: 10px; padding: 12px; margin: 18px 0 0; font-size: 15px; color: #6a5733; }
+.notice strong { display: block; margin-bottom: 3px; font-weight: 650; }
+.selected-report { margin: 16px 0; padding: 14px; border: 1px solid #cad6cd; border-radius: 8px; }
+.selected-file { display: flex; align-items: center; gap: 10px; }
+.selected-file>span { min-width: 0; }
+.selected-file strong { display: block; overflow-wrap: anywhere; font-size: 17px; }
+.selected-file small { display: block; color: #49574f; font-size: 16px; }
+.selected-report img { display: block; max-width: 100%; max-height: 220px; margin: 14px auto 0; object-fit: contain; }
+.remove-file { width: 100%; margin-top: 14px; font-size: 16px; font-weight: normal; min-height: 48px; }
+.file-error, .error { color: #83231d; background: #fff1ed; padding: 12px; border: 1px solid #dbb7ae; }
+.error p { margin-top: 0; }
+.error button { font-size: 17px; min-height: 48px; }
+.status { font-weight: 500; font-size: 16px; color: #526b65; text-align: center; margin: 14px 0; }
+.help, .example { font-size: 17px; color: #49574f; }
+.example { margin-bottom: 0; padding: 16px 0 0; border-top: 1px solid #e6ece9; color: #294f48; }
+.example span { display: block; font-size: 14px; color: #61786f; margin-bottom: 6px; }
+.conversation { margin: 0 0 24px; padding: 20px; background: white; border: 1px solid #dce7e3; border-radius: 18px; }
+.conversation h2 { margin-bottom: 16px; }
+.messages { max-height: 380px; overflow-y: auto; }
+.message { border-left: 3px solid #678d75; padding: 12px 14px; background: #f1f6f2; margin: 0 0 14px; overflow-wrap: anywhere; }
+.message.user { background: #f5f5f5; border-color: #8b918d; }
+.message p { margin-bottom: 0; }
+.setup { border-top: 1px solid #d8dfda; padding: 8px 4px 0; font-size: 15px; color: #526b65; overflow-wrap: anywhere; }
+summary { min-height: 48px; padding: 10px 0; cursor: pointer; }
+.setup form { display: grid; gap: 12px; }
+.setup input { min-width: 0; width: 100%; padding: 12px; border: 1px solid #758679; border-radius: 6px; background: white; color: #202b27; }
+.setup input:disabled { background: #f1f2f0; }
+footer { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 22px; font-size: 16px; color: #356a61; text-align: left; }
+footer svg { flex-shrink: 0; }
+footer p { margin: 0; }
+footer span { font-size: 14px; color: #526b65; }
+.audio-host { display: none; }
+/* A phone-sized preview on desktop; an edge-to-edge app on phones. */
+@media (min-width: 601px) {
+  body { padding: 24px; }
+  .app-shell { height: calc(100dvh - 48px); min-height: 0; max-height: 920px; overflow-y: auto; border: 6px solid #24433f; border-radius: 32px; box-shadow: 0 18px 56px #193d3a26; scrollbar-width: thin; scrollbar-color: #bacfc8 #f6f9f8; }
+}
+@media (max-width: 600px) {
+  :root { background: #f6f9f8; }
+  .app-shell { max-width: none; }
+}
+@media (max-width: 360px) { header { padding-left: 18px; padding-right: 18px; } main { padding-left: 14px; padding-right: 14px; } .welcome { margin-left: -14px; margin-right: -14px; padding-left: 18px; padding-right: 18px; } .step { padding: 18px 14px; } h1 { font-size: 27px; } h2 { font-size: 21px; } button { font-size: 18px; } }
+
+/* Keep the two primary actions together without shrinking touch targets. */
+header { padding-top: calc(10px + env(safe-area-inset-top)); padding-bottom: 10px; }
+.menu-button { min-width: 44px; min-height: 44px; padding: 8px; border: 0; background: transparent; }
+.welcome { padding-top: 16px; padding-bottom: 16px; margin-bottom: 12px; }
+h1 { font-size: 26px; margin-bottom: 4px; }
+.step { padding: 16px; margin-bottom: 12px; }
+.step-heading { align-items: center; margin-bottom: 12px; gap: 10px; }
+.upload-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.upload-actions button { flex-direction: column; gap: 5px; padding: 12px 6px; font-size: 17px; min-height: 78px; }
+.notice { margin-top: 12px; padding: 9px 10px; font-size: 14px; line-height: 1.45; }
+.call-button { margin-top: 12px; min-height: 60px; }
+.status { margin: 10px 0; font-size: 15px; }
+.example { padding-top: 10px; margin-top: 10px; font-size: 16px; }
+.help { font-size: 15px; margin: 8px 0; }
+footer { margin-top: 12px; font-size: 14px; gap: 8px; }
+main { padding-bottom: calc(12px + env(safe-area-inset-bottom)); }
+.conversation-dialog { width: min(440px, calc(100% - 24px)); max-height: calc(100dvh - 32px); padding: 20px; border: 1px solid #dce7e3; border-radius: 20px; color: #193d3a; background: #f6f9f8; overflow-y: auto; }
+.conversation-dialog::backdrop { background: #102d2b80; }
+.dialog-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.conversation-hint { font-size: 15px; color: #526b65; }
+.conversation-dialog .messages { max-height: 50dvh; min-height: 120px; margin-bottom: 16px; }
+@media (max-width: 350px) { .upload-actions { grid-template-columns: 1fr; } }
+.change-report { margin-left: auto; padding: 8px 12px; min-height: 44px; font-size: 16px; flex-shrink: 0; }
+.sample-report-button { width: 100%; margin-top: 10px; min-height: 44px; font-size: 16px; }
+.selected-report.compact-report { border: 0; padding: 0; margin: 0; }
+.compact-report .selected-file strong { font-size: 15px; font-weight: 500; }
+.compact-report summary { margin-top: 8px; cursor: pointer; }
+.report-progress { display: flex; align-items: center; gap: 12px; padding: 14px; margin-bottom: 14px; border-radius: 12px; background: #edf6f2; color: #285d56; }
+.report-progress > svg { flex-shrink: 0; }
+.report-progress strong { font-size: 18px; }
+.report-progress p { margin: 4px 0 0; font-size: 15px; line-height: 1.45; }
+.report-progress.empty { background: transparent; padding: 0; }
+.processing-spinner { animation: report-spin 1.2s linear infinite; }
+@keyframes report-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .processing-spinner { animation: none; } }
+.report-summary { display: flex; width: 100%; align-items: center; gap: 12px; padding: 16px; margin-bottom: 14px; border: 1px solid #dce7e3; border-radius: 16px; background: white; color: #203e3b; text-align: left; }
+.report-summary > svg { flex-shrink: 0; color: #39816f; }
+.report-summary span { min-width: 0; }
+.report-summary strong { display: block; font-size: 18px; font-weight: 600; }
+.report-summary small { display: block; font-size: 14px; font-weight: 400; color: #60736c; line-height: 1.4; margin-top: 2px; }
+.report-added-layout .talk-step { padding: 22px 16px 18px; border-radius: 20px; }
+.conversation-eyebrow { text-align: center; font-size: 15px; color: #58786d; margin: 0; }
+.report-added-layout .talk-step .voice-orb-stage { height: clamp(130px, 23dvh, 178px); }
+.report-added-layout .talk-step .voice-activity { margin-bottom: 18px; }
+.report-added-layout .talk-step .voice-activity p { min-height: 56px; display: grid; place-items: center; color: #203e3b; font-size: 21px; }
+.report-added-layout .call-button { margin-top: 0; min-height: 54px; box-shadow: none; }
+.report-added-layout .call-button.end { background: #994b3e; }
+.report-added-layout footer { margin-top: 18px; justify-content: center; text-align: center; }
+.report-detail-image { display: block; width: 100%; max-height: 320px; object-fit: contain; margin-top: 16px; }
+.report-filename { overflow-wrap: anywhere; }
+/* Fit the main journey to the viewport. Long history/details remain in dialogs. */
+body { padding: 0; }
+.app-shell, .app-shell.report-added-layout { height: 100dvh; min-height: 0; max-height: none; display: flex; flex-direction: column; overflow: visible; }
+.app-shell > header { flex: 0 0 auto; }
+.app-shell > main { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 10px; }
+.app-shell > main > .welcome { flex: 0 0 auto; margin-bottom: 0; padding-top: 12px; padding-bottom: 12px; }
+.app-shell > main > .step, .app-shell > main > .report-summary { margin-bottom: 0; }
+.app-shell > main > footer { flex: 0 0 auto; margin: auto 0 0; padding-top: 4px; text-align: center; }
+.report-summary { flex: 0 0 auto; padding: 12px 14px; }
+.report-added-layout > main > .talk-step { flex: 1; min-height: 0; display: flex; flex-direction: column; padding: 14px 16px; }
+.report-added-layout .talk-step .voice-activity { flex: 1; min-height: 0; display: flex; flex-direction: column; margin-bottom: 12px; }
+.report-added-layout .talk-step .voice-orb-stage { flex: 1; min-height: 54px; height: auto; padding: 8px 0; }
+.report-added-layout .talk-step .voice-orb { width: clamp(48px, 15dvh, 112px); height: auto; aspect-ratio: 1; max-height: 100%; }
+.report-added-layout .talk-step .voice-activity p { flex: 0 0 auto; min-height: 0; font-size: 20px; line-height: 1.3; }
+.report-added-layout .talk-step .call-button { flex: 0 0 auto; min-height: 50px; padding: 10px 12px; }
+.report-added-layout .talk-step .status { font-size: 14px; margin: 6px 0 0; }
+.talk-step .error { flex: 0 0 auto; padding: 8px 10px; margin-top: 8px; font-size: 14px; }
+.talk-step .error p { margin: 0 0 4px; }
+.talk-step .error button { min-height: 44px; padding: 6px 10px; font-size: 15px; }
+.upload-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (min-width: 601px) {
+  :root {
+    /* Match a 390 × 844 phone instead of a fixed-width, variable-height panel. */
+    --phone-height: clamp(700px, calc(100dvh - 32px), 844px);
+    --phone-width: calc(var(--phone-height) * 390 / 844);
+  }
+  body { padding: 16px; min-height: 100dvh; display: grid; place-items: center; }
+  #root { width: 100%; }
+  .app-shell, .app-shell.report-added-layout {
+    width: var(--phone-width); max-width: none;
+    height: var(--phone-height); max-height: none;
+    aspect-ratio: 390 / 844; overflow: visible;
+  }
+  .app-shell > header { border-radius: 25px 25px 0 0; }
+  .app-shell > .care-dialog, .app-shell > .conversation-dialog {
+    width: calc(var(--phone-width) - 24px);
+    max-height: min(calc(var(--phone-height) - 24px), calc(100dvh - 32px));
+  }
+}
+@media (max-height: 680px) {
+  .app-shell > header { padding-top: calc(6px + env(safe-area-inset-top)); padding-bottom: 6px; }
+  .app-shell > main { gap: 8px; }
+  .app-shell > main > .welcome { padding-top: 8px; padding-bottom: 8px; }
+  .welcome h1 { font-size: 23px; }
+  .welcome .intro { font-size: 15px; }
+  .report-summary { padding: 8px 12px; }
+  .report-added-layout > main > .talk-step { padding: 10px 14px; }
+  .report-added-layout .talk-step .voice-activity p { font-size: 18px; }
+  .conversation-eyebrow { font-size: 14px; }
+}
+/* Preserve access under extreme zoom, a keyboard, or short landscape viewports. */
+@media (max-height: 480px) {
+  .app-shell, .app-shell.report-added-layout { height: auto; min-height: 100dvh; max-height: none; }
+  .report-added-layout .talk-step .voice-orb-stage { flex: none; height: 70px; }
+}
+.voice-home-hint { display: flex; align-items: center; gap: 6px; color: #286b61; font-size: 13px; line-height: 1.4; margin: 8px 0 0; }
+.voice-home-hint svg { flex-shrink: 0; }
+.home-voice-option { gap: 8px; padding: 8px 12px; background: #edf7f3; border-color: #c2dcd2; font-size: 16px; }
+.home-voice-option span { text-align: left; line-height: 1.3; }
+.home-voice-option small { display: block; font-size: 12px; font-weight: 400; color: #526b65; margin-top: 2px; }

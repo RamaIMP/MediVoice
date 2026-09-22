@@ -1,0 +1,16 @@
+.env
+.env.*
+!.env.example
+.venv/
+medivoice_env/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+node_modules/
+dist/
+data/
+debug_logs/
+console-recordings/
+*.ses
+.DS_Store

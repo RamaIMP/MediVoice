@@ -1,0 +1,92 @@
+<div id="medivoice-orb-preview">
+  <style>
+    #medivoice-orb-preview { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: light-dark(#203e3b,#e5f4f0); }
+    #medivoice-orb-preview * { box-sizing: border-box; }
+    #medivoice-orb-preview .mv-phone { max-width: 390px; margin: 12px auto; border: 5px solid light-dark(#304b47,#52736c); border-radius: 34px; overflow: hidden; background: light-dark(#f5f9f7,#142521); }
+    #medivoice-orb-preview .mv-header { display: flex; align-items: center; gap: 12px; padding: 22px 18px; background: light-dark(#ffffff,#1c302b); }
+    #medivoice-orb-preview .mv-brand { font-size: 27px; font-weight: 650; letter-spacing: -1px; color: light-dark(#286e6c,#8bd4c6); }
+    #medivoice-orb-preview .mv-sub { font-size: 14px; color: light-dark(#5c706a,#b0c9c1); margin: 4px 0 0; }
+    #medivoice-orb-preview button, #medivoice-orb-preview select { font: inherit; }
+    #medivoice-orb-preview .mv-menu { border: 0; background: transparent; color: inherit; min-width: 44px; min-height: 44px; cursor: pointer; }
+    #medivoice-orb-preview .mv-tag { font-size: 12px; padding: 5px 8px; margin-left: auto; border-radius: 8px; background: light-dark(#fff1db,#4b3a22); color: light-dark(#785625,#f2d9aa); }
+    #medivoice-orb-preview .mv-intro { padding: 18px 22px; background: light-dark(#e6f3ee,#203c33); }
+    #medivoice-orb-preview h1 { font-size: 24px; line-height: 1.25; margin: 0 0 8px; letter-spacing: -.5px; font-weight: 650; }
+    #medivoice-orb-preview .mv-intro p { font-size: 16px; margin: 0; }
+    #medivoice-orb-preview .mv-main { padding: 16px; }
+    #medivoice-orb-preview .mv-report { display: flex; align-items: center; gap: 10px; padding: 14px; background: light-dark(#ffffff,#1c302b); border: 1px solid light-dark(#dce8e2,#355348); border-radius: 16px; }
+    #medivoice-orb-preview .mv-report strong { display: block; font-size: 17px; }
+    #medivoice-orb-preview .mv-report small { font-size: 13px; color: light-dark(#60736c,#b0c9c1); }
+    #medivoice-orb-preview .mv-check { color: light-dark(#257b65,#81d8b7); flex-shrink: 0; }
+    #medivoice-orb-preview .mv-talk { margin-top: 14px; border: 1px solid light-dark(#dce8e2,#355348); background: light-dark(#ffffff,#1c302b); border-radius: 20px; padding: 24px 16px 18px; text-align: center; }
+    #medivoice-orb-preview .mv-eyebrow { font-size: 14px; color: light-dark(#52766a,#a7d3c2); margin: 0; }
+    #medivoice-orb-preview .mv-orb-stage { display: grid; place-items: center; height: 178px; }
+    #medivoice-orb-preview .mv-orb { width: var(--mv-orb-size,112px); height: var(--mv-orb-size,112px); border-radius: 50%; position: relative; overflow: hidden; background: radial-gradient(circle at 30% 20%,#edfff8 0%,#a1eada 27%,#47bcae 60%,#147b7b 100%); box-shadow: 0 8px 28px #3bb4a32b; animation: mv-breathe 3.8s ease-in-out infinite; }
+    #medivoice-orb-preview .mv-orb::before, #medivoice-orb-preview .mv-orb::after { content: ''; position: absolute; width: 155%; height: 145%; left: -30%; top: 36%; border-radius: 44% 56% 63% 37%; background: linear-gradient(135deg,#ffffffbf,#7cdec744 48%,#148a93aa); animation: mv-flow 7s linear infinite; }
+    #medivoice-orb-preview .mv-orb::after { top: 55%; left: -10%; background: linear-gradient(145deg,#e7fff9dd,#46bba077); animation-direction: reverse; animation-duration: 9s; }
+    #medivoice-orb-preview [data-motion="speaking"] .mv-orb { animation: mv-speaking 1.2s ease-in-out infinite; }
+    #medivoice-orb-preview [data-motion="thinking"] .mv-orb::before { animation-duration: 4s; }
+    #medivoice-orb-preview [data-motion="idle"] .mv-orb, #medivoice-orb-preview [data-motion="idle"] .mv-orb::before, #medivoice-orb-preview [data-motion="idle"] .mv-orb::after { animation-play-state: paused; }
+    #medivoice-orb-preview .mv-status { min-height: 56px; display: grid; place-items: center; font-size: 21px; font-weight: 600; line-height: 1.35; margin: 0 0 16px; }
+    #medivoice-orb-preview .mv-end { width: 100%; padding: 14px 12px; border: 0; border-radius: 14px; background: light-dark(#a04438,#a94d41); color: #fff; font-size: 19px; font-weight: 600; min-height: 52px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; }
+    #medivoice-orb-preview .mv-footer { text-align: center; font-size: 13px; color: light-dark(#55756a,#b0c9c1); margin: 16px 0 4px; }
+    #medivoice-orb-preview .mv-preview-control { max-width: 390px; margin: 16px auto 0; display: grid; gap: 6px; font-size: 14px; }
+    #medivoice-orb-preview select { width: 100%; min-height: 44px; border-radius: 10px; border: 1px solid light-dark(#c4d7cd,#52736c); background: light-dark(#fff,#1c302b); color: inherit; padding: 8px 10px; }
+    #medivoice-orb-preview .mv-transcript { text-align: left; font-size: 16px; margin: 14px 0 0; padding-top: 14px; border-top: 1px solid light-dark(#dce8e2,#355348); }
+    @keyframes mv-breathe { 50% { transform: scale(1.045); } }
+    @keyframes mv-flow { to { transform: rotate(360deg); } }
+    @keyframes mv-speaking { 0%,100% { transform: scale(.95); } 40% { transform: scale(1.08); } 70% { transform: scale(1.015); } }
+    @media (prefers-reduced-motion: reduce) { #medivoice-orb-preview .mv-orb, #medivoice-orb-preview .mv-orb::before, #medivoice-orb-preview .mv-orb::after { animation: none; } }
+  </style>
+  <div class="mv-phone">
+    <header class="mv-header"><button class="mv-menu" aria-label="Show conversation text" aria-expanded="false"><i data-lucide="menu" aria-hidden="true"></i></button><div><div class="mv-brand">MediVoice</div><p class="mv-sub">Your report companion</p></div><span class="mv-tag">Demo</span></header>
+    <section class="mv-intro"><h1>Understand your report</h1><p>Ask in Hindi, Telugu or English.</p></section>
+    <div class="mv-main">
+      <div class="mv-report"><i data-lucide="circle-check" class="mv-check" aria-hidden="true"></i><div><strong>Report added</strong><small>Sample report · demo</small></div></div>
+      <section class="mv-talk" data-motion="thinking" aria-label="Voice conversation">
+        <p class="mv-eyebrow">Conversation in progress</p>
+        <div class="mv-orb-stage" aria-hidden="true"><div class="mv-orb"></div></div>
+        <p class="mv-status" role="status" aria-live="polite">Checking your report…</p>
+        <button class="mv-end"><i data-lucide="phone-off" aria-hidden="true"></i><span>Stop talking</span></button>
+        <div class="mv-transcript" hidden><strong>You</strong><p>Please explain my report.</p></div>
+      </section>
+      <p class="mv-footer">Always follow your doctor’s advice.</p>
+    </div>
+  </div>
+  <label class="mv-preview-control">Preview conversation state
+    <select aria-label="Preview conversation state">
+      <option value="listening">Listening</option><option value="thinking">Preparing an answer</option><option value="report" selected>Checking the report</option><option value="doctors">Finding doctor options</option><option value="appointment">Preparing an appointment request</option><option value="speaking">Speaking</option>
+    </select>
+  </label>
+  <script>
+    (() => {
+      const root = document.getElementById('medivoice-orb-preview');
+      const panel = root.querySelector('.mv-talk');
+      const select = root.querySelector('select');
+      const status = root.querySelector('.mv-status');
+      const end = root.querySelector('.mv-end');
+      const eyebrow = root.querySelector('.mv-eyebrow');
+      const labels = { listening: 'Listening…', thinking: 'Preparing your answer…', report: 'Checking your report…', doctors: 'Finding demo doctor options…', appointment: 'Preparing your appointment request…', speaking: 'Speaking…' };
+      let active = true;
+      const design = { size: 112 };
+      function render() {
+        panel.dataset.motion = !active ? 'idle' : ['listening','speaking'].includes(select.value) ? select.value : 'thinking';
+        status.textContent = active ? labels[select.value] : 'Ready when you are';
+        eyebrow.textContent = active ? 'Conversation in progress' : 'Conversation paused';
+        end.querySelector('span').textContent = active ? 'Stop talking' : 'Resume preview';
+        root.style.setProperty('--mv-orb-size', design.size + 'px');
+      }
+      select.addEventListener('change', () => { active = true; render(); });
+      end.addEventListener('click', () => { active = !active; render(); });
+      root.querySelector('.mv-menu').addEventListener('click', (event) => {
+        const transcript = root.querySelector('.mv-transcript');
+        transcript.hidden = !transcript.hidden;
+        event.currentTarget.setAttribute('aria-expanded', String(!transcript.hidden));
+      });
+      render();
+      if (globalThis.Tweak) {
+        const tweak = new Tweak({ container: panel, onChange: render });
+        tweak.addSlider(design, 'size', { label: 'Orb size', min: 80, max: 140, unit: 'px' });
+      }
+    })();
+  </script>
+</div>

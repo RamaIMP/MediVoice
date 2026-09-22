@@ -1,0 +1,11 @@
+{
+  "report_id": "sample-cbc-001",
+  "report_type": "CBC",
+  "is_sample": true,
+  "description": "Fictional report for the MediVoice development demo. Not patient data.",
+  "findings": [
+    {"parameter": "Hemoglobin", "value": 9.2, "unit": "g/dL", "reference_range": "13.5–17.5", "status": "low"},
+    {"parameter": "WBC", "value": 7500, "unit": "cells/µL", "reference_range": "4500–11000", "status": "normal"},
+    {"parameter": "Platelets", "value": 240000, "unit": "cells/µL", "reference_range": "150000–450000", "status": "normal"}
+  ]
+}
