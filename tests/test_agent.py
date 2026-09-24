@@ -6,7 +6,72 @@ import pytest
 from livekit.agents import llm
 
 from packages.shared.settings import Settings
-from packages.voice.agent import MedicalLLM, prepare_report
+from packages.voice.agent import MedicalLLM, prepare_report, trace_conversation_item
+from packages.voice.pipeline import PipelineError
+
+
+def test_bvc_enabled_only_for_room_audio(monkeypatch):
+    from packages.voice.agent import voice_room_options
+    sentinel = object()
+    calls = []
+    monkeypatch.setattr("packages.voice.agent.noise_cancellation.BVC",
+                        lambda: calls.append(True) or sentinel)
+    config = Settings(_env_file=None)
+    assert voice_room_options(config, console=True) == {}
+    assert calls == []
+    options = voice_room_options(config, console=False)
+    assert options["room_options"].audio_input.noise_cancellation is sentinel
+    assert calls == [True]
+    config.background_voice_cancellation = False
+    assert voice_room_options(config, console=False) == {}
+    assert calls == [True]
+
+
+def test_audio_thresholds_are_conservative_and_configurable():
+    config = Settings(_env_file=None)
+    assert config.vad_activation_threshold == 0.65
+    assert config.vad_min_speech_duration == 0.12
+    assert config.interruption_min_duration == 0.65
+    assert Settings(_env_file=None, vad_min_speech_duration=0.08).vad_min_speech_duration == 0.08
+
+
+def test_conversation_handoff_does_not_access_message_fields(monkeypatch):
+    events = []
+    monkeypatch.setattr("packages.voice.agent.trace", lambda name, **data: events.append((name, data)))
+    trace_conversation_item(SimpleNamespace(item=llm.AgentHandoff(new_agent_id="test-agent")))
+    assert events == [("conversation_event", {"item_type": "agent_handoff"})]
+
+
+def test_conversation_message_retains_debug_fields(monkeypatch):
+    events = []
+    monkeypatch.setattr("packages.voice.agent.trace", lambda name, **data: events.append((name, data)))
+    trace_conversation_item(SimpleNamespace(item=llm.ChatMessage(role="user", content=["Hello"])))
+    assert events == [("conversation_item", {"role": "user", "text": "Hello", "interrupted": False})]
+
+
+async def test_pipeline_error_logged_without_private_debug_mode(caplog):
+    events = []
+
+    async def publish(event):
+        events.append(event)
+
+    class FailedPipeline:
+        settings = SimpleNamespace(groq_model="test", language_provider="groq")
+
+        async def answer(self, *args, **kwargs):
+            raise PipelineError("Gemini request failed (HTTP 404).")
+
+    model = MedicalLLM(FailedPipeline(), {}, publish)
+    context = llm.ChatContext()
+    context.add_message(role="user", content="Explain my report")
+    async with model.chat(chat_ctx=context) as stream:
+        chunks = [chunk async for chunk in stream]
+    assert "Answer pipeline failed" in caplog.text
+    assert "Gemini request failed (HTTP 404)." in caplog.text
+    assert "Explain my report" not in caplog.text
+    assert events == [{"type": "error", "message": "Gemini request failed (HTTP 404)."}]
+    assert "could not complete" in chunks[0].delta.content
+    await model.aclose()
 
 
 def console_settings(tmp_path):
@@ -45,7 +110,7 @@ async def test_agent_emits_pipeline_answer_and_filters_system_messages():
         events.append(event)
 
     class FakePipeline:
-        settings = SimpleNamespace(groq_model="test")
+        settings = SimpleNamespace(groq_model="test", language_provider="groq")
 
         async def answer(self, query, report, history, on_stage):
             assert query == "Explain hemoglobin"
@@ -74,7 +139,7 @@ async def test_agent_cancellation_does_not_emit_answer():
         events.append(event)
 
     class SlowPipeline:
-        settings = SimpleNamespace(groq_model="test")
+        settings = SimpleNamespace(groq_model="test", language_provider="groq")
 
         async def answer(self, *args, **kwargs):
             entered.set()
@@ -97,7 +162,7 @@ async def test_agent_publishes_doctor_panel_before_spoken_answer():
         events.append(event)
 
     class CarePipeline:
-        settings = SimpleNamespace(groq_model="test")
+        settings = SimpleNamespace(groq_model="test", language_provider="groq")
 
         async def answer(self, *args, **kwargs):
             return {"text": "Choose a demo doctor.", "language": "en", "timings_ms": {},

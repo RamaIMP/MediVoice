@@ -2,6 +2,27 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { careTransition as next, careTitle, carePrompt, initialCare, doctors, channelFor, isCareIntent } from './doctorConnect.js';
 
+test('touch-first booking has three steps, preserves edits, and still needs review', () => {
+  let s = next(initialCare(), { type: 'open' });
+  s = next(s, { type: 'select_touch', id: 'demo-2' });
+  assert.equal(s.stage, 'date');
+  s = next(s, { type: 'set_date', value: '2026-10-01' });
+  assert.equal(s.stage, 'time');
+  s = next(s, { type: 'set_time', value: '10:30' });
+  assert.equal(s.stage, 'patient');
+  assert.equal(next(s, { type: 'set_patient_touch', value: ' ' }).stage, 'patient');
+  s = next(s, { type: 'set_patient_touch', value: 'Hari Sankar Prasad' });
+  assert.equal(s.stage, 'review');
+  let back = next(s, { type: 'back' });
+  assert.equal(back.stage, 'patient');
+  assert.equal(back.patient, 'Hari Sankar Prasad');
+  back = next(back, { type: 'back' });
+  assert.equal(back.stage, 'time');
+  assert.equal(back.time, '10:30');
+  assert.equal(next(back, { type: 'back' }).date, '2026-10-01');
+  assert.equal(next(s, { type: 'yes' }).stage, 'handoff');
+});
+
 test('touch appointment controls advance the same demo state as voice replies', () => {
   let state = next(initialCare(), { type: 'select', id: 'demo-1' });
   state = next(state, { type: 'yes' });

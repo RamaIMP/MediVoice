@@ -10,7 +10,31 @@ from packages.voice.pipeline import Pipeline, PipelineError
 
 
 def settings():
-    return Settings(_env_file=None, gemini_api_key="test", groq_api_key="test")
+    return Settings(_env_file=None, language_provider="gemini", gemini_api_key="test", groq_api_key="test")
+
+
+async def test_touch_steps_produce_spoken_guidance_and_preserve_back_navigation():
+    def no_llm(request):
+        raise AssertionError("English touch controls should not need the language model")
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(no_llm)) as client:
+        p = Pipeline(settings(), client)
+        p.care_state, _ = transition(initial_state(), "search")
+        for action, value, stage, phrase in [
+            ("select_touch", "demo-1", "date", "preferred date"),
+            ("set_date", "2026-10-01", "time", "preferred time"),
+            ("set_time", "10:30", "patient", "patient's name"),
+            ("set_patient_touch", "Hari Sankar Prasad", "review", "Hari Sankar Prasad"),
+        ]:
+            result = await p.care_command(action, value, p.care_state["revision"])
+            assert result["care_state"]["stage"] == stage
+            assert phrase in result["text"]
+        for stage in ["patient", "time", "date", "search"]:
+            result = await p.care_command("back", "", p.care_state["revision"])
+            assert result["care_state"]["stage"] == stage
+            assert result["care_state"]["patient"] == "Hari Sankar Prasad"
+            assert result["care_state"]["time"] == "10:30"
+            assert result["care_state"]["date"] == "2026-10-01"
 
 
 def reply(action, value="", language="en"):

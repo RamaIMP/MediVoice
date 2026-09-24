@@ -34,8 +34,9 @@ def prompt(state):
     if stage == "patient_confirm":
         return f"I heard {state['patient']}. Is that correct? Confirm or edit the name."
     if stage in ("date", "time", "patient"):
-        return {"date": "Which date would you prefer?", "time": "What time would suit you?",
-                "patient": "What name should I use for this demo appointment?"}[stage]
+        return {"date": f"You selected {doctor['name']}. Please choose your preferred date on screen.",
+                "time": "Please choose your preferred time on screen. This is not a confirmed slot.",
+                "patient": "Please enter the patient's name on screen, then tap Review details."}[stage]
     if stage == "review":
         return (f"Please confirm: {doctor['name']}, for {state['patient']}, on {state['date']}, "
                 f"preferably at {state['time']}. Shall I prepare the {doctor['channel']} demo handoff?")
@@ -51,10 +52,13 @@ def transition(current, action, value=""):
         s = initial_state()
     elif action == "search":
         s.update(stage="search", selected=None)
-    elif action == "select" and s["stage"] != "closed":
+    elif action == "back" and s["stage"] in ("date", "time", "patient", "review", "patient_confirm"):
+        s["stage"] = {"date": "search", "time": "date", "patient": "time",
+                      "review": "patient", "patient_confirm": "patient"}[s["stage"]]
+    elif action in ("select", "select_touch") and s["stage"] != "closed":
         selected = next((d for d in s.get("doctors", DOCTORS) if d["id"] == value), None)
         if selected:
-            s.update(selected=value, stage="confirm")
+            s.update(selected=value, stage="date" if action == "select_touch" else "confirm")
         else:
             s["notice"] = "Please select one of the three displayed doctors."
     elif action == "yes" and s["stage"] in ("confirm", "patient_confirm", "review"):
@@ -65,6 +69,11 @@ def transition(current, action, value=""):
         s.update(stage="search", selected=None)
     elif action == "edit" and s["stage"] in ("review", "handoff"):
         s["stage"] = "date"
+    elif action == "set_patient_touch" and s["stage"] == "patient":
+        if value and len(value) <= 100:
+            s.update(patient=value, stage="review")
+        else:
+            s["notice"] = "Please provide a short, non-empty name."
     elif action == f"set_{s['stage']}" and s["stage"] in ("date", "time", "patient"):
         if value and len(value) <= 100:
             s[s["stage"]] = value

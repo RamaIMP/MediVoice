@@ -6,6 +6,7 @@ Console debug mode records intermediate text, never credentials or model reasoni
 
 import asyncio
 import json
+import logging
 import time
 import unicodedata
 from collections.abc import Awaitable, Callable
@@ -48,6 +49,10 @@ class Translation(BaseModel):
 
 class PipelineError(Exception):
     """Safe public message; never includes provider response bodies or credentials."""
+
+
+class GeminiUnavailable(PipelineError):
+    """Transient primary-provider failure eligible for fallback."""
 
 
 def unsupported_script(text: str) -> bool:
@@ -110,6 +115,69 @@ class Pipeline:
                     "timings_ms": {}, "simulated": True}
 
     async def gemini(self, instruction: str, payload: dict, structured: bool = False, review: bool = False) -> str:
+        # Historical method name retained for compatibility; Groq is now primary.
+        if self.settings.language_provider == "groq":
+            return await self._groq_fallback(instruction, payload, structured, review)
+        try:
+            return await self._gemini_primary(instruction, payload, structured, review)
+        except (httpx.TransportError, GeminiUnavailable) as exc:
+            if not self.settings.gemini_groq_fallback:
+                raise
+            logging.getLogger("medivoice").warning(
+                "Gemini unavailable; using Groq fallback model=%s reason=%s",
+                self.settings.groq_model, type(exc).__name__,
+            )
+            return await self._groq_fallback(instruction, payload, structured, review)
+
+    async def _groq_fallback(self, instruction, payload, structured, review):
+        body = {
+            "model": self.settings.groq_model,
+            "temperature": 0.1,
+            "max_completion_tokens": 2048,
+            "reasoning_effort": "low",
+            "include_reasoning": False,
+            "messages": [
+                {"role": "system", "content": instruction},
+                {"role": "user", "content": json.dumps(payload)},
+            ],
+        }
+        if structured or review:
+            schema = ({"type": "object", "properties": {"approved": {"type": "boolean"}},
+                       "required": ["approved"]} if review else Translation.model_json_schema())
+            schema["additionalProperties"] = False
+            schema["required"] = list(schema["properties"])
+            for field in schema["properties"].values():
+                field.pop("default", None)
+            if structured and not review:
+                schema["properties"]["care_action"]["enum"] = list(ACTIONS)
+            body["response_format"] = {"type": "json_schema", "json_schema": {
+                "name": "safety_review" if review else "routing", "strict": True, "schema": schema,
+            }}
+        response = await self.client.post(
+            "https://api.groq.com/openai/v1/chat/completions",
+            headers={"Authorization": f"Bearer {self.settings.groq_api_key.get_secret_value()}"},
+            json=body,
+        )
+        if response.is_error:
+            raise PipelineError(f"Groq language request failed (HTTP {response.status_code}).")
+        try:
+            choice = response.json()["choices"][0]
+            if choice.get("finish_reason") != "stop":
+                raise ValueError()
+            text = choice["message"]["content"].strip()
+            if not text:
+                raise ValueError()
+            if review:
+                data = json.loads(text)
+                if type(data.get("approved")) is not bool:
+                    raise ValueError()
+            elif structured:
+                Translation.model_validate_json(text)
+            return text
+        except (KeyError, IndexError, ValueError, TypeError, AttributeError) as exc:
+            raise PipelineError("Groq language model returned no usable response.") from exc
+
+    async def _gemini_primary(self, instruction: str, payload: dict, structured: bool = False, review: bool = False) -> str:
         config = {
             "maxOutputTokens": 1200,
             "thinkingConfig": {"thinkingLevel": "minimal"},
@@ -149,6 +217,8 @@ class Pipeline:
         )
         trace("gemini_http", status=response.status_code, model=self.settings.gemini_model)
         if response.is_error:
+            if response.status_code == 429 or response.status_code >= 500:
+                raise GeminiUnavailable(f"Gemini request failed (HTTP {response.status_code}).")
             if response.status_code == 404:
                 raise PipelineError(
                     "Gemini model unavailable (HTTP 404). Check GEMINI_MODEL and account access; "

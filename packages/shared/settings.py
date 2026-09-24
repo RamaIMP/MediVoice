@@ -14,12 +14,18 @@ class Settings(BaseSettings):
     livekit_api_secret: SecretStr = SecretStr("")
     assemblyai_api_key: SecretStr = SecretStr("")
     assemblyai_model: str = "whisper-rt"
+    background_voice_cancellation: bool = True
+    vad_activation_threshold: float = Field(default=0.65, ge=0.1, le=0.95)
+    vad_min_speech_duration: float = Field(default=0.12, ge=0.05, le=0.5)
+    interruption_min_duration: float = Field(default=0.65, ge=0.2, le=2.0)
     google_places_api_key: SecretStr = SecretStr("")
     here_api_key: SecretStr = SecretStr("")
     doctor_search_provider: Literal["google", "here"] = "google"
     doctor_search_mode: Literal["auto", "dummy"] = "auto"
     gemini_api_key: SecretStr = SecretStr("")
+    language_provider: Literal["groq", "gemini"] = "groq"
     gemini_model: str = "gemini-3.5-flash-lite"
+    gemini_groq_fallback: bool = True
     groq_api_key: SecretStr = SecretStr("")
     groq_model: str = "openai/gpt-oss-120b"
     groq_max_completion_tokens: int = Field(default=1024, ge=256, le=4096)
@@ -39,7 +45,9 @@ class Settings(BaseSettings):
     console_log_dir: Path = BASE / "debug_logs"
 
     def missing(self, voice: bool = True, *, console: bool = False) -> list[str]:
-        names = ["gemini_api_key", "groq_api_key", "groq_model"]
+        names = ["groq_api_key", "groq_model"]
+        if self.language_provider == "gemini":
+            names.append("gemini_api_key")
         if voice:
             names += ["assemblyai_api_key"]
             if self.tts_provider == "elevenlabs":

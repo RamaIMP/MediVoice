@@ -16,10 +16,11 @@ from livekit.agents import (
     TurnHandlingOptions,
     inference,
     llm,
+    room_io,
     tts,
 )
 from livekit.agents.types import DEFAULT_API_CONNECT_OPTIONS
-from livekit.plugins import assemblyai, elevenlabs, silero
+from livekit.plugins import assemblyai, elevenlabs, noise_cancellation, silero
 
 from packages.shared.debug_log import setup_console_logging, trace, turn
 from packages.shared.reports import load_report
@@ -29,6 +30,25 @@ from packages.voice.pipeline import Pipeline, PipelineError
 
 log = logging.getLogger("medivoice")
 server = AgentServer()
+
+
+def voice_room_options(config, *, console):
+    # Room filters require LiveKit Cloud audio; local console stays independent.
+    if console or not config.background_voice_cancellation:
+        return {}
+    return {"room_options": room_io.RoomOptions(
+        audio_input=room_io.AudioInputOptions(noise_cancellation=noise_cancellation.BVC()),
+    )}
+
+
+def trace_conversation_item(event):
+    """Conversation events also include handoffs, which have no message role/text."""
+    item = event.item
+    if not isinstance(item, llm.ChatMessage):
+        trace("conversation_event", item_type=getattr(item, "type", type(item).__name__))
+        return
+    trace("conversation_item", role=item.role, text=item.text_content,
+          interrupted=getattr(item, "interrupted", False))
 
 
 class MedicalLLM(llm.LLM):
@@ -42,7 +62,7 @@ class MedicalLLM(llm.LLM):
 
     @property
     def provider(self):
-        return "gemini-groq-gemini"
+        return f"{self.pipeline.settings.language_provider}-groq"
 
     def chat(self, *, chat_ctx, tools=None, conn_options=DEFAULT_API_CONNECT_OPTIONS, **kwargs):
         return MedicalStream(self, chat_ctx=chat_ctx, tools=tools or [], conn_options=conn_options)
@@ -90,6 +110,9 @@ class MedicalStream(llm.LLMStream):
             # AgentSession cancels generation on interruption; never publish stale answers.
             raise
         except PipelineError as exc:
+            # PipelineError messages are sanitized by the pipeline. Do not log raw
+            # provider responses or exception chains containing patient data/URLs.
+            log.warning("Answer pipeline failed (turn_id=%s): %s", turn_id, str(exc))
             trace("pipeline_error", message=str(exc))
             await owner.publish({"type": "error", "message": str(exc)})
             self._event_ch.send_nowait(
@@ -196,7 +219,11 @@ async def entrypoint(ctx: JobContext):
     pipeline = Pipeline(config, client)
     session = AgentSession(
         stt=speech,
-        vad=silero.VAD.load(),
+        vad=silero.VAD.load(
+            activation_threshold=config.vad_activation_threshold,
+            min_speech_duration=config.vad_min_speech_duration,
+            min_silence_duration=0.55,
+        ),
         llm=MedicalLLM(pipeline, report, publish),
         tts=voice,
         turn_handling=TurnHandlingOptions(
@@ -206,7 +233,7 @@ async def entrypoint(ctx: JobContext):
             interruption={
                 "enabled": True,
                 "mode": "vad",
-                "min_duration": 0.4,
+                "min_duration": config.interruption_min_duration,
                 "min_words": 1,
                 "false_interruption_timeout": 1.0,
                 "resume_false_interruption": True,
@@ -249,10 +276,11 @@ async def entrypoint(ctx: JobContext):
             mapping = {"select": "select", "close": "cancel", "edit": "edit", "search": "search",
                        "search_location": "search_location", "yes": "yes", "decline": "decline",
                        "set_date": "set_date", "set_time": "set_time", "set_patient": "set_patient",
-                       "edit_patient": "edit_patient"}
+                       "edit_patient": "edit_patient", "back": "back",
+                       "select_touch": "select_touch", "set_patient_touch": "set_patient_touch"}
             if kind not in mapping:
                 return
-            value = action.get("area", "") if kind == "search" else action.get("id", "") if kind == "select" else ""
+            value = action.get("area", "") if kind == "search" else action.get("id", "") if kind in ("select", "select_touch") else ""
             if kind.startswith("set_"):
                 value = action.get("value", "")
             if kind == "search_location":
@@ -288,10 +316,7 @@ async def entrypoint(ctx: JobContext):
             pending.add(task)
             task.add_done_callback(pending.discard)
 
-    @session.on("conversation_item_added")
-    def conversation_item(event):
-        trace("conversation_item", role=event.item.role, text=event.item.text_content,
-              interrupted=getattr(event.item, "interrupted", False))
+    session.on("conversation_item_added", trace_conversation_item)
 
     @session.on("user_input_transcribed")
     def transcription(event):
@@ -347,6 +372,7 @@ async def entrypoint(ctx: JobContext):
 
     ctx.add_shutdown_callback(cleanup)
     await session.start(
+        **voice_room_options(config, console=console),
         **({} if console else {"room": ctx.room}),
         agent=Agent(
             instructions="You are MediVoice, a friendly report explanation assistant for a fictional demo."

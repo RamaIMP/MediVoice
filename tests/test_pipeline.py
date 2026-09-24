@@ -11,7 +11,7 @@ from packages.voice.pipeline import Pipeline, PipelineError
 
 def config():
     return Settings(
-        _env_file=None, gemini_api_key=SecretStr("test"), groq_api_key=SecretStr("test")
+        _env_file=None, language_provider="gemini", gemini_api_key=SecretStr("test"), groq_api_key=SecretStr("test")
     )
 
 
