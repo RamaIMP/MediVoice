@@ -33,7 +33,7 @@ class Settings(BaseSettings):
     elevenlabs_model: str = "eleven_v3"
     elevenlabs_voice_id: str = "JBFqnCBsd6RMkjVDRZzb"
     tts_provider: Literal["elevenlabs", "cartesia_livekit"] = "elevenlabs"
-    cartesia_model: str = "cartesia/sonic-3"
+    cartesia_model: str = "cartesia/sonic-3.6"
     cartesia_voice_id: str = "9626c31c-bec5-4cca-baa8-f8ba9e84c8bc"
     frontend_url: str = "http://localhost:5173"
     database_path: Path = BASE / "data" / "sessions.sqlite3"

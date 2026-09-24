@@ -25,7 +25,7 @@ def test_cartesia_uses_livekit_auth_and_native_streaming():
         provider, voice = build_tts(settings)
     assert provider is voice is cartesia.return_value
     cartesia.assert_called_once_with(
-        model="cartesia/sonic-3", voice=settings.cartesia_voice_id,
+        model="cartesia/sonic-3.6", voice=settings.cartesia_voice_id,
         api_key="test-key", api_secret="test-secret",
     )
     elevenlabs.assert_not_called()

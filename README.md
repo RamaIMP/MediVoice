@@ -49,7 +49,7 @@ Appointment previews do not send messages or reserve clinic slots.
 | Voice sessions | LiveKit Agents |
 | Speech recognition | AssemblyAI `whisper-rt` |
 | Language and report processing | Groq `openai/gpt-oss-120b` |
-| Speech output | Cartesia Sonic 3 through LiveKit Inference; selectable ElevenLabs |
+| Speech output | Cartesia Sonic 3.6 through LiveKit Inference; selectable ElevenLabs |
 | Doctor search | Google Places API (New) |
 | Speech detection | Silero VAD |
 | Deployment | Railway backend, Vercel frontend |
@@ -131,7 +131,7 @@ Google credentials are optional when using fictional doctor listings.
 | Google search | `GOOGLE_PLACES_API_KEY`, `DOCTOR_SEARCH_PROVIDER=google` |
 | Live voice mode | `DEMO_MODE=false` |
 
-The example selects Cartesia Sonic 3 through LiveKit Inference. To use ElevenLabs,
+The example selects Cartesia Sonic 3.6 through LiveKit Inference. To use ElevenLabs,
 set `TTS_PROVIDER=elevenlabs` and configure its key, model and voice ID.
 
 For the first run, keep `FRONTEND_URL=http://localhost:5173` and set
