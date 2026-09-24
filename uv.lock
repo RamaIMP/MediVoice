@@ -693,6 +693,9 @@ wheels = [
 assemblyai = [
     { name = "livekit-plugins-assemblyai" },
 ]
+cartesia = [
+    { name = "livekit-plugins-cartesia" },
+]
 codecs = [
     { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
     { name = "numpy", version = "2.5.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
@@ -774,6 +777,18 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/15/fb/16093ff22971ba03878fb387511930b77da54eed9b3e343b2c9df8a14fc6/livekit_plugins_assemblyai-1.6.10.tar.gz", hash = "sha256:00fbec004c7c587e2263c87163bea204b40785583b22e5b4564a65ecfef28dcd", size = 14667, upload-time = "2026-08-13T03:26:08.437Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/d7/e9/6aae051ed8bc0b9a051f1c0b9aea87155abed94672cd9f2c48bbff37890d/livekit_plugins_assemblyai-1.6.10-py3-none-any.whl", hash = "sha256:06aa3c095ee4fd4497c9e554ed5295b585932c638234764df274aa3a83d6cc0f", size = 14815, upload-time = "2026-08-13T03:26:07.356Z" },
+]
+
+[[package]]
+name = "livekit-plugins-cartesia"
+version = "1.6.10"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "livekit-agents" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/58/02/3fd0e466cbe553090ed8a87a6b4a288d9013bae44ef971b2a77f761f0d6d/livekit_plugins_cartesia-1.6.10.tar.gz", hash = "sha256:d23f7a248734c354a15519a0424b4d2f1c94b10becc29afccd763a8ec30c6402", size = 19474, upload-time = "2026-08-13T03:26:38.566Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/48/3d/53a8477f47d5f00329a27a38a1850c176d81ba4e41b22501eec88e277e75/livekit_plugins_cartesia-1.6.10-py3-none-any.whl", hash = "sha256:5e385b7dc02914f211bf9818d1d8e7582b8e2641baaf45017122433e68a32846", size = 27018, upload-time = "2026-08-13T03:26:37.356Z" },
 ]
 
 [[package]]
@@ -859,7 +874,7 @@ source = { virtual = "." }
 dependencies = [
     { name = "fastapi" },
     { name = "httpx" },
-    { name = "livekit-agents", extra = ["assemblyai", "elevenlabs", "silero"] },
+    { name = "livekit-agents", extra = ["assemblyai", "cartesia", "elevenlabs", "silero"] },
     { name = "livekit-api" },
     { name = "livekit-plugins-noise-cancellation" },
     { name = "pydantic-settings" },
@@ -878,7 +893,7 @@ dev = [
 requires-dist = [
     { name = "fastapi", specifier = ">=0.115,<1" },
     { name = "httpx", specifier = ">=0.28,<1" },
-    { name = "livekit-agents", extras = ["assemblyai", "elevenlabs", "silero"], specifier = "~=1.6.7" },
+    { name = "livekit-agents", extras = ["assemblyai", "cartesia", "elevenlabs", "silero"], specifier = "~=1.6.7" },
     { name = "livekit-api", specifier = ">=1.2,<2" },
     { name = "livekit-plugins-noise-cancellation", specifier = "~=0.2" },
     { name = "pydantic-settings", specifier = ">=2.7,<3" },

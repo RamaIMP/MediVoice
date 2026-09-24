@@ -6,6 +6,7 @@ import DoctorConnect from './DoctorConnect.jsx';
 import VoiceActivity from './VoiceActivity.jsx';
 import { voiceActivity, initialActivity } from './voiceActivity';
 import { careTransition, initialCare, isCareIntent } from './doctorConnect';
+import { applyUserTranscript } from './transcripts';
 
 const API = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/+$/, '');
 
@@ -129,6 +130,9 @@ export default function App() {
       room.on(RoomEvent.TranscriptionReceived, (segments, participant) => {
         if (generation.current !== attempt) return;
         const role = participant?.identity === room.localParticipant.identity ? 'user' : 'assistant';
+        // User display text is supplied by the worker so Hindi normalization can
+        // replace the same committed turn without racing raw STT segment updates.
+        if (role === 'user') return;
         setMessages(previous => {
           const next = [...previous];
           for (const segment of segments) {
@@ -147,6 +151,7 @@ export default function App() {
           workerReady = true;
           clearTimeout(workerTimer.current);
           activityDispatch(event);
+          if (event.type === 'user_transcript') setMessages(previous => applyUserTranscript(previous, event));
           if (event.type === 'answer_ready') { setTimings(event.timings_ms); setLanguage(event.language); }
           if (event.type === 'latency') setTimings(t => ({ ...t, voice_response: event.speech_end_to_agent_speaking_ms }));
           if (event.type === 'error') setError(event.message);

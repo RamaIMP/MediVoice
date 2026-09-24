@@ -65,3 +65,44 @@ def test_cartesia_requires_livekit_but_not_elevenlabs(console):
 def test_unknown_provider_rejected():
     with pytest.raises(ValidationError):
         config(tts_provider="typo")
+
+
+@pytest.mark.parametrize("model", ["cartesia/sonic-3.6", "sonic-3.6"])
+def test_direct_cartesia_uses_own_key_not_inference(model):
+    settings = config(tts_provider="cartesia_direct", cartesia_api_key="direct-test-key",
+                      cartesia_model=model)
+    with patch("packages.voice.agent.cartesia.TTS") as direct, \
+            patch("packages.voice.agent.inference.TTS") as gateway:
+        provider, voice = build_tts(settings)
+    assert provider is voice is direct.return_value
+    direct.assert_called_once_with(model="sonic-3.6", voice=settings.cartesia_voice_id,
+                                   api_key="direct-test-key")
+    gateway.assert_not_called()
+
+
+def test_direct_cartesia_requires_own_key():
+    settings = config(tts_provider="cartesia_direct", cartesia_api_key="")
+    assert settings.missing(console=True) == ["CARTESIA_API_KEY"]
+
+
+async def test_direct_cartesia_endpoint_and_language_switching():
+    settings = config(tts_provider="cartesia_direct", cartesia_api_key="test")
+    provider, voice = build_tts(settings)
+    try:
+        assert provider is voice
+        assert provider._opts.base_url == "https://api.cartesia.ai"
+        assert provider._opts.model == "sonic-3.6"
+        for language in ("en", "hi", "te"):
+            voice.update_options(language=language)
+            assert voice._opts.language == language
+    finally:
+        await provider.aclose()
+
+
+def test_direct_cartesia_console_does_not_require_livekit_but_ui_does():
+    settings = config(tts_provider="cartesia_direct", cartesia_api_key="test",
+                      livekit_url="", livekit_api_key="", livekit_api_secret="")
+    assert settings.missing(console=True) == []
+    assert settings.missing(console=False) == [
+        "LIVEKIT_URL", "LIVEKIT_API_KEY", "LIVEKIT_API_SECRET",
+    ]

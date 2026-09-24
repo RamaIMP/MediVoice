@@ -116,6 +116,7 @@ async def test_agent_emits_pipeline_answer_and_filters_system_messages():
             assert query == "Explain hemoglobin"
             assert report == {"sample": True}
             assert history == [{"role": "assistant", "text": "Welcome"}]
+            await on_stage({"type": "user_transcript", "text": "मेरी रिपोर्ट", "normalized": True})
             await on_stage({"stage": "medical", "status": "complete", "ms": 1})
             return {"text": "Sample answer", "language": "en", "timings_ms": {"medical": 1}}
 
@@ -128,6 +129,9 @@ async def test_agent_emits_pipeline_answer_and_filters_system_messages():
         chunks = [chunk async for chunk in stream]
     assert chunks[0].delta.content == "Sample answer"
     assert events[-1]["type"] == "answer_ready"
+    assert events[0]["type"] == "user_transcript"
+    assert events[0]["id"] == context.items[-1].id
+    assert events[0]["text"] == "मेरी रिपोर्ट"
     await model.aclose()
 
 

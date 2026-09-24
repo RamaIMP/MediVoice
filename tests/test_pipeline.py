@@ -51,7 +51,7 @@ async def test_progress_only_checks_report_when_needed(report_related, expected)
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
         await Pipeline(config(), client).answer("Question", {}, on_stage=on_stage)
-    assert [event["stage"] for event in events if event["status"] == "working"] == [
+    assert [event["stage"] for event in events if event.get("status") == "working"] == [
         "translate_in", expected, "safety_check",
     ]
 

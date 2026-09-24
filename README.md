@@ -16,6 +16,8 @@ prescribing; always follow your doctor's advice.
   conversation states.
 - **Multilingual conversations:** application-level language handling for English,
   Hindi and Telugu.
+- **Hindi transcript display:** Devanagari normalization within the existing
+  language-routing call, without a separate normalization request.
 - **Report-grounded answers:** structured report context, numeric checks and
   model-based safety review.
 - **Doctor discovery:** Google Places API (New) listings with addresses, Google
@@ -49,7 +51,7 @@ Appointment previews do not send messages or reserve clinic slots.
 | Voice sessions | LiveKit Agents |
 | Speech recognition | AssemblyAI `whisper-rt` |
 | Language and report processing | Groq `openai/gpt-oss-120b` |
-| Speech output | Cartesia Sonic 3.6 through LiveKit Inference; selectable ElevenLabs |
+| Speech output | Cartesia Sonic 3.6 directly; selectable LiveKit Inference or ElevenLabs |
 | Doctor search | Google Places API (New) |
 | Speech detection | Silero VAD |
 | Deployment | Railway backend, Vercel frontend |
@@ -119,7 +121,8 @@ Create your own LiveKit Cloud project, AssemblyAI account and Groq account. Copy
 the LiveKit project's WebSocket URL (`wss://…`), API key and secret, plus the
 AssemblyAI and Groq API keys, into the matching `.env` fields. Enable access to
 the selected models and ensure the accounts have available quota/credits.
-The default Cartesia path uses your LiveKit project's Inference access.
+The example uses a separate Cartesia account and `CARTESIA_API_KEY` for speech output.
+Keep provider keys in the backend `.env` or Railway variables, never the frontend.
 Google credentials are optional when using fictional doctor listings.
 
 | Configuration | Variables |
@@ -127,12 +130,25 @@ Google credentials are optional when using fictional doctor listings.
 | LiveKit | `LIVEKIT_URL`, `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET` |
 | Speech recognition | `ASSEMBLYAI_API_KEY` |
 | Groq | `GROQ_API_KEY`, `LANGUAGE_PROVIDER=groq` |
-| Cartesia via LiveKit | `TTS_PROVIDER=cartesia_livekit`, model and voice ID from the example |
+| Direct Cartesia | `TTS_PROVIDER=cartesia_direct`, `CARTESIA_API_KEY`, model and voice ID from the example |
 | Google search | `GOOGLE_PLACES_API_KEY`, `DOCTOR_SEARCH_PROVIDER=google` |
 | Live voice mode | `DEMO_MODE=false` |
 
-The example selects Cartesia Sonic 3.6 through LiveKit Inference. To use ElevenLabs,
-set `TTS_PROVIDER=elevenlabs` and configure its key, model and voice ID.
+The example selects Cartesia Sonic 3.6 directly and uses Cartesia credits, not
+LiveKit Inference credits. `CARTESIA_MODEL=cartesia/sonic-3.6` works for both
+Cartesia paths; the direct plugin removes the `cartesia/` prefix.
+To use LiveKit Inference instead, set `TTS_PROVIDER=cartesia_livekit` and ensure
+LiveKit inference credits remain. To use ElevenLabs, set `TTS_PROVIDER=elevenlabs`
+and configure its key, model and voice ID. Providers do not switch automatically.
+
+Hindi transcripts are normalized to Devanagari in the existing language-routing
+call, including Romanized Hindi and confidently recognized Hindustani rendered
+in Urdu script by speech recognition. The conversation panel updates the same
+user turn after normalization. Numeric values are checked for changes, medical
+terms and negation are preserved by the routing prompt, and patient-name
+collection is never normalized. Uncertain input asks for clarification; other
+languages remain subject to the language guardrail. Raw speech transcripts stay
+available in private console debug logs when enabled.
 
 For the first run, keep `FRONTEND_URL=http://localhost:5173` and set
 `DOCTOR_SEARCH_MODE=dummy`. Leave `VITE_API_BASE_URL` unset locally so the Vite
@@ -249,11 +265,30 @@ The repository includes a [Dockerfile](Dockerfile) and
   `python -m deploy.railway`, sharing the demo SQLite session store.
 - Set backend credentials in Railway variables.
 - Copy the non-secret model/voice settings from `.env.example` too, including
-  `TTS_PROVIDER=cartesia_livekit`, `LANGUAGE_PROVIDER=groq` and `DEMO_MODE=false`
+  `TTS_PROVIDER=cartesia_direct`, `LANGUAGE_PROVIDER=groq` and `DEMO_MODE=false`
   for the default live voice setup. Local `.env` files are not deployed by Git.
 - Set `FRONTEND_URL` to the exact Vercel origin without a trailing slash.
 - Expose FastAPI's `PORT` (default 8080); the worker health server uses 8081.
 - Use `/health` for the configured health check and test a voice session after deployment.
+
+For direct Cartesia speech output, configure these Railway variables alongside
+the LiveKit, AssemblyAI and Groq credentials:
+
+```dotenv
+TTS_PROVIDER=cartesia_direct
+CARTESIA_API_KEY=your_cartesia_key_here
+CARTESIA_MODEL=cartesia/sonic-3.6
+CARTESIA_VOICE_ID=9626c31c-bec5-4cca-baa8-f8ba9e84c8bc
+ASSEMBLYAI_MODEL=whisper-rt
+LANGUAGE_PROVIDER=groq
+GROQ_MODEL=openai/gpt-oss-120b
+DEMO_MODE=false
+```
+
+This sends speech synthesis directly to Cartesia; LiveKit still provides the
+browser voice connection. Keep the LiveKit URL, key and secret from the same
+project. An existing Railway service must have its variables updated explicitly:
+changing `.env.example` in Git does not change the deployed configuration.
 
 ### Vercel frontend
 
@@ -264,6 +299,12 @@ The repository includes a [Dockerfile](Dockerfile) and
 
 After Vercel provides the frontend URL, set that exact origin as Railway's
 `FRONTEND_URL` and redeploy the backend. Then test a new conversation on Vercel.
+
+When publishing updates, push to the branch connected to both hosts (normally
+`main`). Confirm Railway and Vercel deployed the intended commit; if automatic
+deployment is disabled, trigger deployment manually. Reload the frontend and
+start a new voice session to test the new worker and UI together. Check a report
+question in each language and the guided Doctor Connect flow.
 
 Backend secrets belong in Railway. Never put secrets in `VITE_*` variables,
 which can be included in browser bundles. Hosting and provider usage are billed

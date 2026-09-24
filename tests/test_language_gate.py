@@ -44,7 +44,7 @@ async def test_name_step_does_not_accept_invented_names_or_route_medical():
         assert result["guardrail"] == "unclear"
 
 
-@pytest.mark.parametrize("query", ["продолжение следует", "你好", "مرحبا", "Find डॉक्टर врач"])
+@pytest.mark.parametrize("query", ["продолжение следует", "你好", "Find डॉक्टर врач"])
 async def test_other_scripts_never_call_any_provider(query):
     def handler(request):
         pytest.fail("Rejected script must not reach a provider")

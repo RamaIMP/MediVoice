@@ -32,7 +32,8 @@ class Settings(BaseSettings):
     elevenlabs_api_key: SecretStr = SecretStr("")
     elevenlabs_model: str = "eleven_v3"
     elevenlabs_voice_id: str = "JBFqnCBsd6RMkjVDRZzb"
-    tts_provider: Literal["elevenlabs", "cartesia_livekit"] = "elevenlabs"
+    tts_provider: Literal["elevenlabs", "cartesia_livekit", "cartesia_direct"] = "elevenlabs"
+    cartesia_api_key: SecretStr = SecretStr("")
     cartesia_model: str = "cartesia/sonic-3.6"
     cartesia_voice_id: str = "9626c31c-bec5-4cca-baa8-f8ba9e84c8bc"
     frontend_url: str = "http://localhost:5173"
@@ -54,6 +55,8 @@ class Settings(BaseSettings):
                 names += ["elevenlabs_api_key", "elevenlabs_voice_id"]
             else:
                 names += ["cartesia_model", "cartesia_voice_id"]
+                if self.tts_provider == "cartesia_direct":
+                    names += ["cartesia_api_key"]
             if not console or self.tts_provider == "cartesia_livekit":
                 names += ["livekit_url", "livekit_api_key", "livekit_api_secret"]
         return [name.upper() for name in names if not self._present(getattr(self, name))]

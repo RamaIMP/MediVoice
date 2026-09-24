@@ -20,7 +20,7 @@ from livekit.agents import (
     tts,
 )
 from livekit.agents.types import DEFAULT_API_CONNECT_OPTIONS
-from livekit.plugins import assemblyai, elevenlabs, noise_cancellation, silero
+from livekit.plugins import assemblyai, cartesia, elevenlabs, noise_cancellation, silero
 
 from packages.shared.debug_log import setup_console_logging, trace, turn
 from packages.shared.reports import load_report
@@ -82,8 +82,13 @@ class MedicalStream(llm.LLMStream):
             return
         turn_id = uuid.uuid4().hex
         trace_token = turn.set(turn_id)
+        transcript_id = next(item.id for item in reversed(self._chat_ctx.items)
+                             if isinstance(item, llm.ChatMessage) and item.role == "user")
 
         async def stage(payload):
+            if payload.get("type") == "user_transcript":
+                await owner.publish({**payload, "id": transcript_id, "turn_id": turn_id})
+                return
             await owner.publish({"type": "stage", "turn_id": turn_id, **payload})
 
         try:
@@ -133,6 +138,13 @@ class MedicalStream(llm.LLMStream):
 
 
 def build_tts(config):
+    if config.tts_provider == "cartesia_direct":
+        provider = cartesia.TTS(
+            model=config.cartesia_model.removeprefix("cartesia/"),
+            voice=config.cartesia_voice_id,
+            api_key=config.cartesia_api_key.get_secret_value(),
+        )
+        return provider, provider
     if config.tts_provider == "cartesia_livekit":
         provider = inference.TTS(
             model=config.cartesia_model,
@@ -183,10 +195,12 @@ async def entrypoint(ctx: JobContext):
     log.info("TTS provider: %s", config.tts_provider)
     if config.tts_provider == "cartesia_livekit":
         log.info("Cartesia Sonic via LiveKit Inference: LiveKit usage applies, including console.")
+    elif config.tts_provider == "cartesia_direct":
+        log.info("Cartesia Sonic direct: Cartesia credits apply; no LiveKit Inference TTS usage.")
     pending: set[asyncio.Task] = set()
 
     async def publish(payload):
-        if config.tts_provider == "cartesia_livekit" and payload.get("type") == "answer_ready":
+        if config.tts_provider in ("cartesia_livekit", "cartesia_direct") and payload.get("type") == "answer_ready":
             voice.update_options(language=payload["language"])
         trace("agent_event", **payload)
         if console:
@@ -292,7 +306,7 @@ async def entrypoint(ctx: JobContext):
             result = await pipeline.care_command(mapping[kind], value, data["revision"])
             await publish({"type": "doctor_connect", "state": result["care_state"]})
             command_busy = False
-            if config.tts_provider == "cartesia_livekit":
+            if config.tts_provider in ("cartesia_livekit", "cartesia_direct"):
                 voice.update_options(language=pipeline.response_language or "en")
             await session.say(result["text"])
         except (ValueError, TypeError, KeyError, AttributeError):
