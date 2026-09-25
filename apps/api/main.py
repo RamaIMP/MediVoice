@@ -1,13 +1,15 @@
+import asyncio
 import json
 from contextlib import asynccontextmanager
 from datetime import timedelta
 
 import httpx
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from livekit.api import AccessToken, RoomAgentDispatch, RoomConfiguration, VideoGrants
 from pydantic import BaseModel, Field
 
+from packages.knowledge.qwen_pdf_to_json import ReportExtractionError, extract_medical_report_bytes
 from packages.shared.reports import load_report
 from packages.shared.settings import Settings
 from packages.shared.store import SessionStore
@@ -47,6 +49,49 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     def create_session():
         sid = store.create(sample)
         return {"session_id": sid, "report": sample, "expires_in": config.session_ttl_seconds}
+
+    @app.post("/api/reports")
+    async def upload_report(file: UploadFile = File(...)):
+        accepted = {"application/pdf", "image/jpeg", "image/png", "image/webp"}
+        content_type = file.content_type or ""
+        if content_type not in accepted:
+            raise HTTPException(415, "Choose a PDF, JPG, PNG, or WebP report.")
+        content = await file.read(config.report_upload_max_bytes + 1)
+        await file.close()
+        if len(content) > config.report_upload_max_bytes:
+            raise HTTPException(413, "Choose a report smaller than 10 MB.")
+        key = config.groq_api_key.get_secret_value()
+        if not key:
+            raise HTTPException(503, "Report analysis is not configured. Add GROQ_API_KEY and try again.")
+        try:
+            report = await asyncio.to_thread(
+                extract_medical_report_bytes,
+                content,
+                file.filename or "medical-report",
+                content_type,
+                key,
+                max_pages=config.report_upload_max_pages,
+            )
+        except ReportExtractionError as exc:
+            if exc.status_code == 429:
+                raise HTTPException(
+                    429,
+                    "Report processing has reached its temporary usage limit. Please wait a minute and try again.",
+                ) from None
+            raise HTTPException(502, "The report-processing service is temporarily unavailable. Please try again.") from None
+        except ValueError as exc:
+            raise HTTPException(422, str(exc)) from None
+        except Exception:
+            raise HTTPException(502, "We could not read that report. Please try a clear image or PDF again.") from None
+        sid = store.create(report)
+        return {
+            "session_id": sid,
+            "expires_in": config.session_ttl_seconds,
+            "report_summary": {
+                "processed_page_count": report["processed_page_count"],
+                "lab_name": report.get("lab", {}).get("name"),
+            },
+        }
 
     def get_report(sid):
         report = store.get(sid)

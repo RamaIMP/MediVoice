@@ -82,6 +82,35 @@ async def test_patient_name_is_never_normalized():
         ]
 
 
+async def test_urdu_script_hindi_retries_with_explicit_normalization_instruction():
+    events = []
+
+    async def publish(event):
+        events.append(event)
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(lambda r: httpx.Response(
+        200, json={"choices": [{"message": {"content": "Safe answer."}}]}
+    ))) as client:
+        pipeline = Pipeline(Settings(_env_file=None, groq_api_key="test"), client)
+        responses = iter([
+            {"language": "unsupported", "english_query": "Unsupported input", "scope": "medical"},
+            {"language": "hi", "english_query": "Explain my report", "normalized_query": "मेरी रिपोर्ट के बारे में बताइए", "scope": "medical", "report_related": True},
+        ])
+
+        async def model(instruction, payload, structured=False, review=False):
+            if structured:
+                return json.dumps(next(responses))
+            if review:
+                return '{"approved": true}'
+            return "सुरक्षित उत्तर।"
+
+        pipeline.gemini = AsyncMock(side_effect=model)
+        result = await pipeline.answer("میرے ریپورٹ کے بارے میں بتائیے", {}, on_stage=publish)
+        assert result["language"] == "hi"
+        assert any(event.get("stage") == "normalize_hindustani" for event in events)
+        assert any(event.get("normalized") and "देवनागरी" not in event["text"] for event in events)
+
+
 def test_numeric_guard_preserves_values_and_rejects_new_values():
     assert valid_hindi_normalization("Hb 9.2 g/dL hai", "Hb 9.2 g/dL है")
     assert not valid_hindi_normalization("Hb 9.2 g/dL hai", "Hb 12 g/dL है")

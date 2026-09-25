@@ -21,25 +21,23 @@ def prompt(state):
         return "Doctor Connect is closed. We can continue discussing your report."
     if stage == "search":
         if state.get("source") == "location":
-            return "Tap Use my location, or tell me your area and city."
+            return "Use the controls on screen to share your location or enter your area and city."
         if state.get("source") in ("google", "here"):
-            names = ", ".join(f"{i + 1}: {d['name']}" for i, d in enumerate(state["doctors"]))
-            return f"Real listings, demo booking only. {names}. Which would you like?"
+            return "I have listed the doctors on screen. Please tap the doctor you want to book."
         if state.get("search_notice"):
-            return state["search_notice"] + " Choose a displayed doctor or provide your area and city."
-        return ("These are fictional demo doctors, not real nearby results. "
-                "One is Dr. Asha, two is Dr. Ravi, and three is Dr. Meera. Which would you like?")
+            return state["search_notice"] + " Use the on-screen controls to choose a doctor or enter your area and city."
+        return "I have listed doctors on screen. Please tap the doctor you want to book."
     if stage == "confirm":
-        return f"You selected {doctor['name']}. Would you like to book? This is a demo request only."
+        return f"You selected {doctor['name']}. Please continue using the on-screen controls."
     if stage == "patient_confirm":
-        return f"I heard {state['patient']}. Is that correct? Confirm or edit the name."
+        return f"You entered {state['patient']}. Please review the request on screen."
     if stage in ("date", "time", "patient"):
         return {"date": f"You selected {doctor['name']}. Please choose your preferred date on screen.",
                 "time": "Please choose your preferred time on screen. This is not a confirmed slot.",
                 "patient": "Please enter the patient's name on screen, then tap Review details."}[stage]
     if stage == "review":
-        return (f"Please confirm: {doctor['name']}, for {state['patient']}, on {state['date']}, "
-                f"preferably at {state['time']}. Shall I prepare the {doctor['channel']} demo handoff?")
+        return (f"Your request for {doctor['name']} on {state['date']} at {state['time']} is ready. "
+                "Please tap the on-screen button to continue.")
     return (f"Your {doctor['channel']} request preview is ready on screen. "
             "This is a simulated handoff. Nothing has been sent or booked; a real clinic must confirm.")
 

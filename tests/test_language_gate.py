@@ -7,8 +7,8 @@ from packages.voice.pipeline import Pipeline, unsupported_script
 from tests.test_pipeline import config, gemini_reply
 
 
-@pytest.mark.parametrize("language", ["en", "hi", "te"])
-@pytest.mark.parametrize("name", ["Hari Sankar Prasad", "హరి శంకర్ ప్రసాద్", "हरि शंकर प्रसाद"])
+@pytest.mark.parametrize("language", ["en", "hi"])
+@pytest.mark.parametrize("name", ["Hari Sankar Prasad", "हरि शंकर प्रसाद"])
 async def test_patient_names_are_not_language_classified(language, name):
     def handler(request):
         assert request.url.host == "generativelanguage.googleapis.com"
@@ -74,15 +74,51 @@ async def test_classifier_rejection_prevents_tools_medical_and_language_switch(l
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
         pipeline = Pipeline(config(), client)
-        pipeline.response_language = "te"
+        pipeline.response_language = "hi"
         before = dict(pipeline.care_state)
         result = await pipeline.answer("Necesito un médico", {})
         assert result["input_rejected"]
-        assert pipeline.response_language == "te"
+        assert pipeline.response_language == "hi"
         assert pipeline.care_state == before
     assert len(calls) == 1
 
 
-@pytest.mark.parametrize("query", ["मेरी hemoglobin report", "నా report", "meri report samjhao", "naa report cheppandi", "yes", "2", "English please"])
+@pytest.mark.parametrize("query", ["मेरी hemoglobin report", "meri report samjhao", "yes", "2", "English please"])
 def test_allowed_scripts_and_code_switching_pass_initial_gate(query):
     assert not unsupported_script(query)
+
+
+@pytest.mark.parametrize("query,language", [
+    ("Please tell me about my report", "en"),
+    ("मेरी रिपोर्ट के बारे में बताइए", "hi"),
+])
+async def test_direct_report_requests_are_not_rejected_as_off_topic(query, language):
+    def handler(request):
+        assert request.url.host == "api.groq.com"
+        return httpx.Response(200, json={"choices": [{"message": {"content": "Safe report answer."}}]})
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        pipeline = Pipeline(config(), client)
+
+        async def model(instruction, payload, structured=False, review=False):
+            if structured:
+                return json.dumps({"language": language, "english_query": "Explain my report",
+                                   "normalized_query": "", "scope": "off_topic", "report_related": False,
+                                   "report_summary": True})
+            if review:
+                return '{"approved": true}'
+            return "Safe report answer."
+
+        pipeline.gemini = model
+        result = await pipeline.answer(query, {})
+        assert result.get("guardrail") is None
+        assert result["language"] == language
+
+
+async def test_telugu_is_rejected_before_any_provider_call():
+    async with httpx.AsyncClient(transport=httpx.MockTransport(
+        lambda request: pytest.fail("Telugu must not reach a provider")
+    )) as client:
+        result = await Pipeline(config(), client).answer("నా నివేదిక గురించి చెప్పండి", {})
+    assert result["input_rejected"] is True
+    assert result["language"] == "en"

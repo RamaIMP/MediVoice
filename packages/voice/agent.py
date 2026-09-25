@@ -80,6 +80,12 @@ class MedicalStream(llm.LLMStream):
         ]
         if not messages or messages[-1]["role"] != "user":
             return
+        # Once Doctor Connect opens, booking choices must come from the screen.
+        # Ignore microphone turns completely so ambient speech cannot select a
+        # doctor, provide a date/time, or be mistaken for a patient's name.
+        if getattr(owner.pipeline, "care_state", {"stage": "closed"})["stage"] != "closed":
+            trace("doctor_connect_voice_ignored")
+            return
         turn_id = uuid.uuid4().hex
         trace_token = turn.set(turn_id)
         transcript_id = next(item.id for item in reversed(self._chat_ctx.items)
@@ -127,7 +133,6 @@ class MedicalStream(llm.LLMStream):
                         role="assistant",
                         content={
                             "hi": "माफ़ कीजिए, अभी आपका सवाल पूरा नहीं कर पाया। कृपया फिर से पूछिए।",
-                            "te": "క్షమించండి, మీ ప్రశ్నకు సమాధానం ఇవ్వలేకపోయాను. దయచేసి మళ్లీ అడగండి.",
                         }.get(getattr(owner.pipeline, "response_language", None),
                               "Sorry, I could not complete that request. Please try again."),
                     ),
@@ -143,6 +148,10 @@ def build_tts(config):
             model=config.cartesia_model.removeprefix("cartesia/"),
             voice=config.cartesia_voice_id,
             api_key=config.cartesia_api_key.get_secret_value(),
+            # Sonic word timestamps are only available for a small set of
+            # languages. MediVoice does not consume them, and requesting them
+            # can leave non-English streams without audio frames.
+            word_timestamps=False,
         )
         return provider, provider
     if config.tts_provider == "cartesia_livekit":
@@ -278,15 +287,6 @@ async def entrypoint(ctx: JobContext):
             action = data.get("action", {})
             kind = action.get("type")
             await session.interrupt()
-            if kind == "reply":
-                text = action.get("text", "")
-                if not isinstance(text, str) or not text.strip() or len(text) > 200:
-                    return
-                # Goes through the same Gemini router and agent response as microphone turns.
-                handle = session.generate_reply(user_input=text)
-                command_busy = False
-                await handle.wait_for_playout()
-                return
             mapping = {"select": "select", "close": "cancel", "edit": "edit", "search": "search",
                        "search_location": "search_location", "yes": "yes", "decline": "decline",
                        "set_date": "set_date", "set_time": "set_time", "set_patient": "set_patient",
@@ -394,7 +394,7 @@ async def entrypoint(ctx: JobContext):
     )
     await session.say(
         "Welcome to MediVoice. We are using a sample report. "
-        "You can ask a question in English, Hindi, or Telugu."
+        "You can ask a question in English or Hindi."
     )
 
 

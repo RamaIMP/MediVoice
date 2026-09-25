@@ -56,7 +56,7 @@ async def test_progress_only_checks_report_when_needed(report_related, expected)
     ]
 
 
-@pytest.mark.parametrize("native", ["hi", "te"])
+@pytest.mark.parametrize("native", ["hi"])
 async def test_native_language_persists_until_explicit_switch(native):
     turns = iter([(native, False), ("en", False), ("en", False), ("en", True)])
     preferences = []
@@ -85,7 +85,7 @@ async def test_native_language_persists_until_explicit_switch(native):
         assert Pipeline(config(), client).response_language is None
 
 
-@pytest.mark.parametrize("language", ["hi", "te", "en"])
+@pytest.mark.parametrize("language", ["hi", "en"])
 async def test_pipeline_preserves_report_and_routes_language(language):
     requests = []
     report = {"findings": [{"value": 9.2, "unit": "g/dL"}]}
@@ -133,6 +133,24 @@ async def test_provider_error_does_not_expose_body():
         with pytest.raises(PipelineError, match="HTTP 401") as caught:
             await Pipeline(config(), client).answer("Question", {})
         assert "SECRET" not in str(caught.value)
+
+
+async def test_medical_prompt_answers_the_latest_question_without_diagnosis():
+    seen = []
+
+    def handler(request):
+        body = json.loads(request.content)
+        if request.url.host == "api.groq.com":
+            seen.append(body["messages"][0]["content"])
+            return httpx.Response(200, json={"choices": [{"message": {"content": "Please discuss the printed out-of-range result with your clinician."}}]})
+        return gemini_reply(json.dumps({"language": "en", "english_query": "Is it concerning?", "report_related": True}))
+
+    report = {"pages": [{"tables": [{"columns": ["Test", "Value"], "rows": [["Nitrite", "Positive"]]}]}]}
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        await Pipeline(config(), client).answer("Is it concerning?", report, [{"role": "assistant", "text": "Earlier explanation"}])
+    assert "latest question directly" in seen[0]
+    assert "fresh summary of the whole report" in seen[0]
+    assert "cannot determine its cause" in seen[0]
 
 
 async def test_malformed_translation_never_calls_medical():

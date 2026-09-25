@@ -1,7 +1,7 @@
 import { useEffect, useReducer, useRef, useState } from 'react';
 import { Room, RoomEvent, Track } from 'livekit-client';
 import { Camera, CheckCircle, Menu, Mic, PhoneOff, Send, Upload, X } from 'lucide-react';
-import { request as apiRequest } from './api';
+import { request as apiRequest, uploadReport } from './api';
 import DoctorConnect from './DoctorConnect.jsx';
 import VoiceActivity from './VoiceActivity.jsx';
 import { voiceActivity, initialActivity } from './voiceActivity';
@@ -33,6 +33,7 @@ export default function App() {
   const [reportFile, setReportFile] = useState(null);
   const [reportState, setReportState] = useState('empty');
   const [reportPreview, setReportPreview] = useState('');
+  const [reportSummary, setReportSummary] = useState(null);
   const [fileError, setFileError] = useState('');
   const photoInput = useRef(null);
   const fileInput = useRef(null);
@@ -63,14 +64,7 @@ export default function App() {
     setReportPreview(url);
     return () => URL.revokeObjectURL(url);
   }, [reportFile]);
-  useEffect(() => {
-    if (reportState !== 'processing') return;
-    // UI demonstration only: no uploaded content is sent or analysed.
-    const timer = setTimeout(() => setReportState('ready'), 1800);
-    return () => clearTimeout(timer);
-  }, [reportState, reportFile]);
-
-  function chooseReport(event) {
+  async function chooseReport(event) {
     const file = event.target.files?.[0];
     event.target.value = '';
     if (!file) return;
@@ -78,7 +72,27 @@ export default function App() {
       setFileError('Please choose a JPG, PNG, WebP image or PDF.'); return;
     }
     if (file.size > 10 * 1024 * 1024) { setFileError('Please choose a file smaller than 10 MB.'); return; }
-    setFileError(''); setReportFile(file); setReportState('processing');
+    setFileError(''); setError(''); setReportFile(file); setReportSummary(null); setSession(null); setReportState('processing');
+    setStatus('Uploading and reading your report…');
+    try {
+      const created = await uploadReport('/api/reports', file, { baseUrl: API });
+      setSession(created); setReportSummary(created.report_summary); setReportState('ready');
+      setStatus('Your report is ready. Let’s talk.');
+    } catch (err) {
+      setReportState('empty'); setReportFile(null); setReportSummary(null); setFileError(err.message);
+      setStatus('Choose a report to try again.');
+    }
+  }
+
+  async function trySampleReport() {
+    setFileError(''); setError(''); setReportFile(null); setReportSummary(null); setReportState('processing');
+    setStatus('Preparing the sample report…');
+    try {
+      const created = await request('/api/sessions', {});
+      setSession(created); setReportState('ready'); setStatus('Your report is ready. Let’s talk.');
+    } catch (err) {
+      setReportState('empty'); setFileError(err.message); setStatus('Choose a report to try again.');
+    }
   }
 
   async function ensureSession() {
@@ -98,7 +112,8 @@ export default function App() {
     await room?.disconnect();
     audioHost.current?.replaceChildren();
     setConnected(false); setConnecting(false); setStatus('Conversation ended');
-    setSession(null);
+    // Keep this report's session so a stopped call can be started again without
+    // silently falling back to the configured sample report.
   }
 
   async function start() {
@@ -174,7 +189,9 @@ export default function App() {
         if (roomRef.current === room) {
           clearTimeout(workerTimer.current); setConnected(false); setStatus('Disconnected — start again');
           activityDispatch({ type: 'reset' });
-          setSession(null); audioHost.current?.replaceChildren(); roomRef.current = null;
+          // The report session remains valid until its server-side expiry. Retain
+          // it so reconnecting continues with the same uploaded report.
+          audioHost.current?.replaceChildren(); roomRef.current = null;
           careDispatch({ type: 'close' }); setCareBusy(false); clearTimeout(careTimer.current);
         }
       });
@@ -191,7 +208,7 @@ export default function App() {
       }, 30000);
     } catch (err) {
       await room.disconnect();
-      if (generation.current === attempt) { setError(err.name === 'NotAllowedError' ? 'Microphone permission was denied. Allow microphone access in your browser and try again.' : err.message); setStatus('Unable to connect'); setSession(null); roomRef.current = null; }
+      if (generation.current === attempt) { setError(err.name === 'NotAllowedError' ? 'Microphone permission was denied. Allow microphone access in your browser and try again.' : err.message); setStatus('Unable to connect'); roomRef.current = null; }
     } finally { if (generation.current === attempt) setConnecting(false); }
   }
 
@@ -246,11 +263,11 @@ export default function App() {
   return <div ref={appShell} className={`app-shell${reportAdded ? ' report-added-layout' : ''}`}>
     <header><div className="brand-row"><button className="menu-button" aria-label="Open conversation text" aria-haspopup="dialog" onClick={() => conversationDialog.current?.showModal()}><Menu size={26} aria-hidden="true" /></button><div><span className="brand">MediVoice</span><p>Your report companion</p></div><span className="demo-badge">Demo</span></div></header>
     <main>
-      <div className="welcome"><h1>Understand your report</h1><p className="intro">Ask in Hindi, Telugu or English.</p>
+      <div className="welcome"><h1>Understand your report</h1><p className="intro">Ask in Hindi or English.</p>
         {!reportAdded && <p className="voice-home-hint"><Mic size={17} aria-hidden="true" />Voice-enabled · No typing needed</p>}
       </div>
       {reportAdded && <button className="report-summary" aria-haspopup="dialog" aria-label="Report added. View report details" onClick={() => reportDialog.current?.showModal()}>
-        <CheckCircle size={24} aria-hidden="true" /><span><strong>Report added</strong><small>{reportFile ? 'Sample answers · uploaded file not analysed' : 'Sample report · demo'}</small></span>
+        <CheckCircle size={24} aria-hidden="true" /><span><strong>Report added</strong><small>{reportFile ? `${reportSummary?.processed_page_count || 1} page${reportSummary?.processed_page_count === 1 ? '' : 's'} analysed` : 'Sample report · demo'}</small></span>
       </button>}
       <section className="step" aria-labelledby="report-title" hidden={reportAdded}>
           <div className="step-heading"><span className="step-number">1</span><div><h2 id="report-title">Add your report</h2></div></div>
@@ -258,13 +275,13 @@ export default function App() {
             <input hidden ref={photoInput} type="file" accept="image/jpeg,image/png,image/webp" capture="environment" onChange={chooseReport} aria-label="Take a report photo" />
             <input hidden ref={fileInput} type="file" accept="image/jpeg,image/png,image/webp,application/pdf" onChange={chooseReport} aria-label="Choose a report image or PDF" />
             {reportState === 'empty' && <><div className="upload-actions"><button className="photo-button" onClick={() => photoInput.current?.click()}><Camera size={25} aria-hidden="true" />Take photo</button><button className="file-button" onClick={() => fileInput.current?.click()}><Upload size={23} aria-hidden="true" />Choose file</button></div>
-              <button className="sample-report-button home-voice-option" onClick={() => { setFileError(''); setReportState('processing'); }}><Mic size={21} aria-hidden="true" /><span>Try voice<small>With a sample report</small></span></button></>}
+              <button className="sample-report-button home-voice-option" onClick={trySampleReport}><Mic size={21} aria-hidden="true" /><span>Try voice<small>With a sample report</small></span></button></>}
           </div>
           {fileError && <p className="file-error" role="alert">{fileError}</p>}
-          <p className="notice">Demo: sample report only. Your file stays on this device and isn’t analysed.</p>
+          <p className="notice">Your report is securely sent to MediVoice for analysis and used only for this conversation.</p>
       </section>
       <section className="step talk-step" aria-label="Voice conversation" hidden={!reportAdded}>
-        {reportAdded ? <p className="conversation-eyebrow">{connected ? 'Conversation in progress' : connecting ? 'Starting your conversation' : reportState === 'processing' ? 'Preparing the sample report · demo' : 'Ready when you are'}</p> : <div className="step-heading"><span className="step-number">2</span><div><h2>Let’s talk about it</h2><p>Add a report or try the sample to begin.</p></div></div>}
+        {reportAdded ? <p className="conversation-eyebrow">{connected ? 'Conversation in progress' : connecting ? 'Starting your conversation' : reportState === 'processing' ? 'Reading your report…' : 'Ready when you are'}</p> : <div className="step-heading"><span className="step-number">2</span><div><h2>Let’s talk about it</h2><p>Add a report or try the sample to begin.</p></div></div>}
         {reportAdded && care.stage === 'closed' && <VoiceActivity activity={displayActivity} />}
         {connected || connecting ? <button className="call-button end" onClick={stop}><PhoneOff size={26} aria-hidden="true" />Stop talking</button> : <button className="call-button" disabled={voiceDisabled} onClick={start}><Mic size={27} aria-hidden="true" />Start talking</button>}
         {!connected && !connecting && reportState === 'ready' && voiceDisabled && <p className="status" role="status">Voice is unavailable. Check demo setup in the menu.</p>}
@@ -275,9 +292,9 @@ export default function App() {
     <dialog ref={reportDialog} className="conversation-dialog report-details-dialog" aria-labelledby="report-details-title">
       <div className="dialog-heading"><h2 id="report-details-title">Your report</h2><button className="menu-button" aria-label="Close report details" onClick={() => reportDialog.current?.close()}><X size={25} /></button></div>
       <p className="report-filename">{reportFile?.name || 'Sample report'}</p>
-      <p className="notice">Demo: answers use the sample report. Your uploaded file stays on this device and isn’t analysed.</p>
+      <p className="notice">{reportFile ? `This report was analysed for this conversation${reportSummary?.lab_name ? ` · ${reportSummary.lab_name}` : ''}.` : 'Demo: answers use the sample report.'}</p>
       {reportPreview && <img className="report-detail-image" src={reportPreview} alt="Selected medical report preview" onError={() => setReportPreview('')} />}
-      <button className="sample-report-button" disabled={connected || connecting} onClick={() => { setReportState('empty'); setReportFile(null); setFileError(''); reportDialog.current?.close(); }}>Change report</button>
+      <button className="sample-report-button" disabled={connected || connecting} onClick={() => { setReportState('empty'); setReportFile(null); setReportSummary(null); setSession(null); setFileError(''); reportDialog.current?.close(); }}>Change report</button>
       {(connected || connecting) && <p>End the conversation before changing your report.</p>}
     </dialog>
     <dialog ref={conversationDialog} className="conversation-dialog" aria-labelledby="conversation-title">

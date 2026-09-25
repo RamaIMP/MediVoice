@@ -7,7 +7,7 @@ from packages.shared.settings import Settings
 from packages.voice.pipeline import Pipeline
 
 
-@pytest.mark.parametrize("language", ["en", "hi", "te"])
+@pytest.mark.parametrize("language", ["en", "hi"])
 @pytest.mark.parametrize("approved", [True, False])
 async def test_groq_only_answer_preserves_review_and_translation(language, approved):
     calls = []

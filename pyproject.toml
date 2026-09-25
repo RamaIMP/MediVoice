@@ -5,6 +5,7 @@ requires-python = ">=3.11,<3.14"
 dependencies = [
   "fastapi>=0.115,<1", "uvicorn>=0.34,<1", "httpx>=0.28,<1",
   "python-dotenv>=1.0,<2", "pydantic-settings>=2.7,<3",
+  "pymupdf>=1.26,<2", "python-multipart>=0.0.20,<1",
   "livekit-agents[assemblyai,cartesia,elevenlabs,silero]~=1.6.7",
   "livekit-api>=1.2,<2",
   "livekit-plugins-noise-cancellation~=0.2",

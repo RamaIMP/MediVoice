@@ -23,14 +23,12 @@ test('touch-first booking has three steps, preserves edits, and still needs revi
   assert.equal(next(s, { type: 'yes' }).stage, 'handoff');
 });
 
-test('touch appointment controls advance the same demo state as voice replies', () => {
+test('touch appointment controls advance without a spoken-name confirmation step', () => {
   let state = next(initialCare(), { type: 'select', id: 'demo-1' });
   state = next(state, { type: 'yes' });
   state = next(state, { type: 'set_date', value: '2026-10-01' });
   state = next(state, { type: 'set_time', value: '10:00' });
   state = next(state, { type: 'set_patient', value: 'Demo' });
-  assert.equal(state.stage, 'patient_confirm');
-  state = next(state, { type: 'yes' });
   assert.equal(state.stage, 'review');
   assert.equal(next(state, { type: 'yes' }).stage, 'handoff');
 });

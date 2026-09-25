@@ -11,10 +11,10 @@ export const channelFor = d => d.whatsapp ? 'WhatsApp' : d.phone ? 'Phone' : d.b
 export const doctorsFor = s => Array.isArray(s.doctors) ? s.doctors.map(d => ({ ...doctors.find(item => item.id === d.id), ...d })) : doctors;
 export function carePrompt(s) {
   const d = doctorsFor(s).find(d => d.id === s.selected);
-  if (s.stage === 'patient_confirm') return `I heard ${s.patient}. Is that correct?`;
-  if (s.stage === 'search' && s.source === 'location') return 'Tap Use my location, or choose your area and city.';
-  if (s.stage === 'search' && ['google', 'here'].includes(s.source)) return 'Real listings · Demo booking. Choose a listing or say its number.';
-  return ({ search: 'Here are three fictional doctors. Choose a pin or say “second doctor”.', confirm: `You selected ${d?.name}. Would you like to book?`, date: 'Please select your preferred date below.', time: 'Please select your preferred time below.', patient: 'Please enter the patient’s name, then tap Review details.', review: `Please check the details. Shall I prepare the ${d ? channelFor(d) : ''} handoff?`, handoff: 'Demo handoff only. Nothing has been sent or booked.' })[s.stage] || '';
+  if (s.stage === 'patient_confirm') return `You entered ${s.patient}. Please review the request below.`;
+  if (s.stage === 'search' && s.source === 'location') return 'Use the controls below to share your location or choose your area and city.';
+  if (s.stage === 'search' && ['google', 'here'].includes(s.source)) return 'Real listings · Demo booking. Tap a listing to choose it.';
+  return ({ search: 'Tap the doctor you want to book.', confirm: `You selected ${d?.name}. Continue below.`, date: 'Please select your preferred date below.', time: 'Please select your preferred time below.', patient: 'Please enter the patient’s name, then tap Review details.', review: 'Please check the details and use the button below to continue.', handoff: 'Demo handoff only. Nothing has been sent or booked.' })[s.stage] || '';
 }
 export function careTransition(s, action) {
   if (action.type === 'back') {
@@ -25,12 +25,18 @@ export function careTransition(s, action) {
     const patient = (action.value || '').trim();
     return patient && patient.length <= 100 ? { ...s, patient, stage: 'review', notice: '' } : { ...s, notice: 'Please enter a name (up to 100 characters).' };
   }
+  if (action.type === `set_${s.stage}` && ['date', 'time'].includes(s.stage)) {
+    const value = (action.value || '').trim();
+    return value && value.length <= 100
+      ? { ...s, [s.stage]: value, stage: s.stage === 'date' ? 'time' : 'patient', notice: '' }
+      : { ...s, notice: 'Please provide a value.' };
+  }
   if (action.type === 'select_touch' && s.stage !== 'closed') {
     return doctorsFor(s).some(d => d.id === action.id) ? { ...s, selected: action.id, stage: 'date', notice: '' } : s;
   }
   if (action.type === 'edit_patient' && s.stage === 'patient_confirm') return { ...s, stage: 'patient', notice: '' };
   if (action.type === 'yes') return careTransition(s, { type: 'reply', text: 'yes' });
-  if (action.type === `set_${s.stage}` && ['date', 'time', 'patient'].includes(s.stage)) return careTransition(s, { type: 'reply', text: action.value });
+  if (action.type === `set_${s.stage}` && s.stage === 'patient') return careTransition(s, { type: 'set_patient_touch', value: action.value });
   if (action.type === 'server') {
     const v = action.state;
     if (!v || !['closed', 'search', 'confirm', 'date', 'time', 'patient', 'patient_confirm', 'review', 'handoff'].includes(v.stage) || !Number.isInteger(v.revision)) return s;

@@ -24,7 +24,7 @@ async def test_touch_steps_produce_spoken_guidance_and_preserve_back_navigation(
             ("select_touch", "demo-1", "date", "preferred date"),
             ("set_date", "2026-10-01", "time", "preferred time"),
             ("set_time", "10:30", "patient", "patient's name"),
-            ("set_patient_touch", "Hari Sankar Prasad", "review", "Hari Sankar Prasad"),
+                ("set_patient_touch", "Hari Sankar Prasad", "review", "on-screen button"),
         ]:
             result = await p.care_command(action, value, p.care_state["revision"])
             assert result["care_state"]["stage"] == stage
@@ -52,7 +52,7 @@ def test_booking_cannot_skip_confirmation_and_fallbacks():
         for action, value in [("yes", ""), ("set_date", "tomorrow"), ("set_time", "10 am"),
                               ("set_patient", "Demo patient"), ("yes", "")]:
             state, text = transition(state, action, value)
-        assert state["stage"] == "review" and channel in text
+        assert state["stage"] == "review" and "on-screen button" in text
         state, text = transition(state, "yes")
         assert state["stage"] == "handoff" and "Nothing has been sent or booked" in text
 

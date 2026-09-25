@@ -58,7 +58,7 @@ async def test_here_real_listing_and_booking(caplog):
         pipeline = Pipeline(config(doctor_search_provider="here", here_api_key="private-here-test-key"), client)
         result = await pipeline.care_command("search", "Bengaluru", 0)
         assert result["care_state"]["source"] == "here"
-        assert "Test Hospital" in result["text"]
+        assert result["text"] == "I have listed the doctors on screen. Please tap the doctor you want to book."
         for action, value in [("select", "real-1"), ("yes", ""), ("set_date", "tomorrow"),
                               ("set_time", "10 am"), ("set_patient", "Test"), ("yes", ""), ("yes", "")]:
             result = await pipeline.care_command(action, value, pipeline.care_state["revision"])
@@ -134,7 +134,7 @@ async def test_real_listing_booking_is_simulated_and_shared_with_voice_state():
         pipeline = Pipeline(config(), client)
         result = await pipeline.care_command("search", "Bengaluru", 0)
         assert result["care_state"]["source"] == "google"
-        assert "Example Hospital" in result["text"]
+        assert result["text"] == "I have listed the doctors on screen. Please tap the doctor you want to book."
         for action, value in [("select", "real-1"), ("yes", ""), ("set_date", "tomorrow"),
                               ("set_time", "10 am"), ("set_patient", "Test"), ("yes", ""), ("yes", "")]:
             result = await pipeline.care_command(action, value, pipeline.care_state["revision"])

@@ -3,7 +3,7 @@
 ### Your report companion—powered by voice
 
 MediVoice brings report explanations and doctor discovery into a guided
-conversation. Speak in English, Hindi or Telugu, explore report findings, and
+conversation. Speak in English or Hindi, explore report findings, and
 choose nearby care through a combination of voice and simple touch controls.
 
 The hackathon demo uses a fictional sample report and simulated appointment
@@ -15,11 +15,13 @@ prescribing; always follow your doctor's advice.
 - **Voice-first experience:** microphone input, spoken responses and animated
   conversation states.
 - **Multilingual conversations:** application-level language handling for English,
-  Hindi and Telugu.
+  Hindi.
 - **Hindi transcript display:** Devanagari normalization within the existing
   language-routing call, without a separate normalization request.
-- **Report-grounded answers:** structured report context, numeric checks and
-  model-based safety review.
+- **Report knowledge pipeline:** upload a medical PDF or image; MediVoice builds
+  a structured, page-linked medical JSON context before the conversation starts.
+- **Report-grounded answers:** voice answers use the uploaded report's tests,
+  values, units, printed reference ranges and laboratory flags.
 - **Doctor discovery:** Google Places API (New) listings with addresses, Google
   Maps links and location-based search.
 - **Guided appointment preview:** select a doctor, choose a date and time, enter
@@ -31,12 +33,13 @@ prescribing; always follow your doctor's advice.
 
 ## How it works
 
-1. Start with the sample report or preview a file locally. Demo answers use the
-   configured sample report.
-2. Ask a question by voice and hear an explanation.
-3. Ask to connect with a doctor to open Doctor Connect within the conversation.
-4. Select a listing, then complete separate date, time and patient-name screens.
-5. Review the simulated request while keeping the voice conversation active.
+1. Upload a medical PDF or image, or start with the fictional sample report.
+2. MediVoice checks the first page, extracts each report page and creates one
+   structured medical JSON context for that conversation.
+3. Ask a question by voice and hear an explanation grounded in that report.
+4. Ask to connect with a doctor to open Doctor Connect within the conversation.
+5. Select a listing, then complete separate date, time and patient-name screens.
+6. Review the simulated request while keeping the voice conversation active.
 
 Each appointment step includes spoken guidance during LiveKit calls. Back buttons
 preserve entered details, and spoken names can be confirmed before review.
@@ -52,15 +55,19 @@ Appointment previews do not send messages or reserve clinic slots.
 | Speech recognition | AssemblyAI `whisper-rt` |
 | Language and report processing | Groq `openai/gpt-oss-120b` |
 | Speech output | Cartesia Sonic 3.6 directly; selectable LiveKit Inference or ElevenLabs |
+| Report knowledge | Qwen 3.8 vision on Groq, PyMuPDF page rendering and validated medical JSON |
 | Doctor search | Google Places API (New) |
 | Speech detection | Silero VAD |
 | Deployment | Railway backend, Vercel frontend |
 
-Report-answer flow:
+Report knowledge and answer flow:
 
 ```text
-Speech → AssemblyAI → Groq routing and report reasoning
-       → Grounding checks, translation and safety review → TTS
+Medical PDF / image → first-page medical relevance check → page rendering
+→ Qwen vision extraction → page-linked medical JSON → session context
+
+Speech → AssemblyAI → Groq routing and report reasoning using session context
+       → Grounding checks, Hindi normalization and safety review → TTS
 ```
 
 Doctor requests use the appointment workflow; off-topic and unclear requests
@@ -76,6 +83,7 @@ apps/
   voice_agent/     LiveKit and console entrypoint
 packages/
   voice/           Speech pipeline and guardrails
+  knowledge/       Medical PDF/image extraction and report JSON construction
   doctor_connect/  Search and appointment workflow
   contracts/       Shared data models
   shared/          Configuration, report loading, storage and logging
@@ -187,8 +195,9 @@ To verify the running application:
 1. Open http://localhost:8010/health and check for `status: "ok"` and no missing
    voice settings.
 2. Confirm the worker terminal reports that the worker is registered.
-3. Open the UI, choose **Try voice** with the sample report, wait for the ready
-   message, and press **Start talking**. Allow microphone access.
+3. Open the UI, choose a medical PDF/image or **Try voice** with the sample
+   report, wait for the ready message, and press **Start talking**. Allow
+   microphone access.
 4. Ask “Please explain my report”, then “Connect me to a doctor”.
 
 Use **Stop talking** to end the call and Ctrl+C in all three terminals to stop
@@ -246,12 +255,29 @@ Labelled fictional listings keep the demo usable when live search is unavailable
 Set `DOCTOR_SEARCH_MODE=dummy` to use them explicitly. The fictional contact
 previews illustrate WhatsApp, phone and appointment-page options.
 
-## Report context
+## Report knowledge pipeline
 
-Both UI sessions and console mode use
-[the fictional sample report](tests/fixtures/reports/sample_report.json) by default.
-Set `REPORT_CONTEXT_PATH` to load another development JSON file that conforms
-to `packages.contracts.ReportContext`.
+MediVoice accepts medical PDFs, JPGs, PNGs and WebP images from the browser.
+The API checks the first page for a medical report, renders each accepted page,
+and sends one page at a time to Qwen vision. The extracted pages are combined
+into a compact JSON document containing patient details, lab details, doctors,
+medical tables, notes and uncertainties. The report's original page structure
+is retained, so blood, urine, biochemistry, imaging and other medical report
+formats can be used in the same conversation flow.
+
+Each extracted table includes semantic column roles such as `test`, `value`,
+`unit`, `reference_range` and `flag`. This lets the voice layer use report data
+without depending on a particular laboratory's header names or column order.
+For text-based PDFs, the page image is cross-checked against the PDF text layer
+to preserve numeric separators such as `7,400` and `7.400`. When a value cannot
+be read confidently, MediVoice keeps it uncertain rather than changing it.
+
+The resulting JSON is stored with the active conversation session and is passed
+to the voice pipeline as report context. Broad summaries identify printed flags
+and reported out-of-range results; questions about a named test receive a
+focused answer using the relevant value and reference range. The fictional
+[sample report](tests/fixtures/reports/sample_report.json) remains available for
+local demos and console mode.
 
 ## Deployment
 

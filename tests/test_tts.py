@@ -76,7 +76,7 @@ def test_direct_cartesia_uses_own_key_not_inference(model):
         provider, voice = build_tts(settings)
     assert provider is voice is direct.return_value
     direct.assert_called_once_with(model="sonic-3.6", voice=settings.cartesia_voice_id,
-                                   api_key="direct-test-key")
+                                   api_key="direct-test-key", word_timestamps=False)
     gateway.assert_not_called()
 
 
@@ -92,7 +92,7 @@ async def test_direct_cartesia_endpoint_and_language_switching():
         assert provider is voice
         assert provider._opts.base_url == "https://api.cartesia.ai"
         assert provider._opts.model == "sonic-3.6"
-        for language in ("en", "hi", "te"):
+        for language in ("en", "hi"):
             voice.update_options(language=language)
             assert voice._opts.language == language
     finally:

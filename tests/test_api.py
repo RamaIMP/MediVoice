@@ -85,3 +85,66 @@ def test_worker_can_read_session_and_expired_session_is_rejected(tmp_path):
     with first.connect() as db:
         db.execute("UPDATE sessions SET expires=? WHERE id=?", (time.time() - 1, sid))
     assert second.get(sid) is None
+
+
+def test_report_upload_creates_a_session_with_extracted_medical_json(tmp_path, monkeypatch):
+    from apps.api import main
+
+    def fake_extract(content, filename, content_type, key, *, max_pages):
+        assert content == b"report-data"
+        assert filename == "report.pdf"
+        assert content_type == "application/pdf"
+        assert key == "groq-key"
+        assert max_pages == 5
+        return {
+            "patient": {"name": "Patient", "age": "35", "sex": "Female"},
+            "lab": {"name": "Example Lab", "address": None},
+            "doctors": [],
+            "pages": [],
+            "processed_page_count": 1,
+        }
+
+    monkeypatch.setattr(main, "extract_medical_report_bytes", fake_extract)
+    with TestClient(create_app(settings(tmp_path, groq_api_key="groq-key"))) as client:
+        response = client.post(
+            "/api/reports",
+            files={"file": ("report.pdf", b"report-data", "application/pdf")},
+        )
+        assert response.status_code == 200
+        result = response.json()
+        assert result["report_summary"] == {"processed_page_count": 1, "lab_name": "Example Lab"}
+        assert SessionStore(tmp_path / "sessions.db").get(result["session_id"])["lab"]["name"] == "Example Lab"
+
+
+def test_report_upload_explains_a_temporary_provider_limit(tmp_path, monkeypatch):
+    from apps.api import main
+
+    def limited(*args, **kwargs):
+        raise main.ReportExtractionError(429, "provider limited")
+
+    monkeypatch.setattr(main, "extract_medical_report_bytes", limited)
+    with TestClient(create_app(settings(tmp_path, groq_api_key="groq-key"))) as client:
+        response = client.post(
+            "/api/reports",
+            files={"file": ("report.png", b"report-data", "image/png")},
+        )
+    assert response.status_code == 429
+    assert "temporary usage limit" in response.json()["detail"]
+
+
+def test_report_upload_rejects_a_non_medical_document(tmp_path, monkeypatch):
+    from apps.api import main
+
+    def non_medical(*args, **kwargs):
+        raise ValueError(
+            "This does not appear to be a medical report. Upload a clear lab report, prescription, or scan report."
+        )
+
+    monkeypatch.setattr(main, "extract_medical_report_bytes", non_medical)
+    with TestClient(create_app(settings(tmp_path, groq_api_key="groq-key"))) as client:
+        response = client.post(
+            "/api/reports",
+            files={"file": ("holiday.png", b"image", "image/png")},
+        )
+    assert response.status_code == 422
+    assert "does not appear to be a medical report" in response.json()["detail"]

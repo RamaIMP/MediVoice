@@ -40,6 +40,8 @@ class Settings(BaseSettings):
     database_path: Path = BASE / "data" / "sessions.sqlite3"
     session_ttl_seconds: int = Field(default=3600, ge=60, le=86400)
     request_timeout_seconds: float = Field(default=25, gt=0, le=120)
+    report_upload_max_bytes: int = Field(default=10 * 1024 * 1024, ge=1_000_000, le=25 * 1024 * 1024)
+    report_upload_max_pages: int = Field(default=5, ge=1, le=20)
     report_context_path: Path = BASE / "tests" / "fixtures" / "reports" / "sample_report.json"
     demo_mode: bool = False
     console_debug: bool = True
