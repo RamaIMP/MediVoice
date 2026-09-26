@@ -389,12 +389,11 @@ async def entrypoint(ctx: JobContext):
         **voice_room_options(config, console=console),
         **({} if console else {"room": ctx.room}),
         agent=Agent(
-            instructions="You are MediVoice, a friendly report explanation assistant for a fictional demo."
+            instructions="You are MediVoice, a friendly medical-report explanation assistant."
         ),
     )
     await session.say(
-        "Welcome to MediVoice. We are using a sample report. "
-        "You can ask a question in English or Hindi."
+        "Welcome to MediVoice. You can ask about your report in English or Hindi."
     )
 
 

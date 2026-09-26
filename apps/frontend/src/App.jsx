@@ -261,7 +261,7 @@ export default function App() {
     : { motion: 'idle', text: 'Your report is ready. Let’s talk.' };
 
   return <div ref={appShell} className={`app-shell${reportAdded ? ' report-added-layout' : ''}`}>
-    <header><div className="brand-row"><button className="menu-button" aria-label="Open conversation text" aria-haspopup="dialog" onClick={() => conversationDialog.current?.showModal()}><Menu size={26} aria-hidden="true" /></button><div><span className="brand">MediVoice</span><p>Your report companion</p></div><span className="demo-badge">Demo</span></div></header>
+    <header><div className="brand-row"><button className="menu-button" aria-label="Open conversation text" aria-haspopup="dialog" onClick={() => conversationDialog.current?.showModal()}><Menu size={26} aria-hidden="true" /></button><div><span className="brand">MediVoice</span><p>Your report companion</p></div>{health?.demo_mode && <span className="demo-badge">Demo mode</span>}</div></header>
     <main>
       <div className="welcome"><h1>Understand your report</h1><p className="intro">Ask in Hindi or English.</p>
         {!reportAdded && <p className="voice-home-hint"><Mic size={17} aria-hidden="true" />Voice-enabled · No typing needed</p>}
