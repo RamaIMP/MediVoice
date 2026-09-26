@@ -32,6 +32,8 @@ def test_audio_thresholds_are_conservative_and_configurable():
     assert config.vad_activation_threshold == 0.65
     assert config.vad_min_speech_duration == 0.12
     assert config.interruption_min_duration == 0.65
+    assert config.max_call_duration_seconds == 180
+    assert config.idle_call_timeout_seconds == 60
     assert Settings(_env_file=None, vad_min_speech_duration=0.08).vad_min_speech_duration == 0.08
 
 

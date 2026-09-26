@@ -38,6 +38,7 @@ export default function App() {
   const photoInput = useRef(null);
   const fileInput = useRef(null);
   const roomRef = useRef(null);
+  const disconnectReason = useRef('');
   const generation = useRef(0);
   const workerTimer = useRef(null);
   const audioHost = useRef(null);
@@ -124,6 +125,7 @@ export default function App() {
       return;
     }
     const attempt = ++generation.current;
+    disconnectReason.current = '';
     activityDispatch({ type: 'connecting' });
     setConnecting(true); setError(''); setStatus('Connecting your microphone…');
     setMessages([]); setTimings({});
@@ -170,6 +172,8 @@ export default function App() {
           if (event.type === 'answer_ready') { setTimings(event.timings_ms); setLanguage(event.language); }
           if (event.type === 'latency') setTimings(t => ({ ...t, voice_response: event.speech_end_to_agent_speaking_ms }));
           if (event.type === 'error') setError(event.message);
+          if (event.type === 'session_warning') setStatus(event.message);
+          if (event.type === 'session_expired') disconnectReason.current = event.message;
           if (event.type === 'doctor_connect') {
             conversationDialog.current?.close();
             careDispatch({ type: 'server', state: event.state });
@@ -187,7 +191,7 @@ export default function App() {
       });
       room.on(RoomEvent.Disconnected, () => {
         if (roomRef.current === room) {
-          clearTimeout(workerTimer.current); setConnected(false); setStatus('Disconnected — start again');
+          clearTimeout(workerTimer.current); setConnected(false); setStatus(disconnectReason.current || 'Disconnected — start again');
           activityDispatch({ type: 'reset' });
           // The report session remains valid until its server-side expiry. Retain
           // it so reconnecting continues with the same uploaded report.

@@ -265,6 +265,69 @@ async def entrypoint(ctx: JobContext):
         ),
     )
     user_stopped = None
+    ending = False
+    timeout_tasks: set[asyncio.Task] = set()
+
+    def track_timeout(task):
+        timeout_tasks.add(task)
+        task.add_done_callback(timeout_tasks.discard)
+        return task
+
+    async def end_voice_session(message: str):
+        """Close the whole room so an abandoned browser cannot keep metered audio alive."""
+        nonlocal ending
+        if ending:
+            return
+        ending = True
+        log.info("Ending voice session: %s", message)
+        await publish({"type": "session_expired", "message": message})
+        # DeleteRoom disconnects both the browser participant and this agent.
+        await ctx.delete_room()
+        ctx.shutdown(message)
+
+    def reset_idle_timeout():
+        if console or ending:
+            return
+        for task in tuple(timeout_tasks):
+            if task.get_name() == "idle-call-timeout":
+                task.cancel()
+
+        async def expire_when_idle():
+            warning_seconds = min(15, config.idle_call_timeout_seconds // 4)
+            await asyncio.sleep(config.idle_call_timeout_seconds - warning_seconds)
+            if ending:
+                return
+            await publish({
+                "type": "session_warning",
+                "message": f"No speech detected. This call will end in {warning_seconds} seconds.",
+            })
+            await asyncio.sleep(warning_seconds)
+            await end_voice_session(
+                f"This call ended after {config.idle_call_timeout_seconds} seconds without speech."
+            )
+
+        track_timeout(asyncio.create_task(expire_when_idle(), name="idle-call-timeout"))
+
+    def start_call_timeouts():
+        if console:
+            return
+
+        async def expire_at_call_limit():
+            warning_seconds = min(15, config.max_call_duration_seconds // 4)
+            await asyncio.sleep(config.max_call_duration_seconds - warning_seconds)
+            if ending:
+                return
+            await publish({
+                "type": "session_warning",
+                "message": f"This call will end in {warning_seconds} seconds.",
+            })
+            await asyncio.sleep(warning_seconds)
+            await end_voice_session(
+                f"This call reached the {config.max_call_duration_seconds}-second limit."
+            )
+
+        track_timeout(asyncio.create_task(expire_at_call_limit(), name="max-call-duration"))
+        reset_idle_timeout()
 
     # Only the patient bound to this room can submit touch/text actions.
     command_busy = False
@@ -336,6 +399,8 @@ async def entrypoint(ctx: JobContext):
     def transcription(event):
         trace("stt_transcript", text=event.transcript, is_final=event.is_final,
               language=getattr(event, "language", None))
+        if event.is_final and event.transcript.strip():
+            reset_idle_timeout()
 
     @session.on("metrics_collected")
     def metrics(event):
@@ -374,6 +439,11 @@ async def entrypoint(ctx: JobContext):
         )
 
     async def cleanup():
+        current = asyncio.current_task()
+        for task in tuple(timeout_tasks):
+            if task is not current:
+                task.cancel()
+        await asyncio.gather(*(task for task in timeout_tasks if task is not current), return_exceptions=True)
         await session.aclose()
         await speech.aclose()
         await voice.aclose()
@@ -392,6 +462,7 @@ async def entrypoint(ctx: JobContext):
             instructions="You are MediVoice, a friendly medical-report explanation assistant."
         ),
     )
+    start_call_timeouts()
     await session.say(
         "Welcome to MediVoice. You can ask about your report in English or Hindi."
     )

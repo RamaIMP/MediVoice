@@ -39,6 +39,8 @@ class Settings(BaseSettings):
     frontend_url: str = "http://localhost:5173"
     database_path: Path = BASE / "data" / "sessions.sqlite3"
     session_ttl_seconds: int = Field(default=3600, ge=60, le=86400)
+    max_call_duration_seconds: int = Field(default=180, ge=30, le=3600)
+    idle_call_timeout_seconds: int = Field(default=60, ge=15, le=900)
     request_timeout_seconds: float = Field(default=25, gt=0, le=120)
     report_upload_max_bytes: int = Field(default=10 * 1024 * 1024, ge=1_000_000, le=25 * 1024 * 1024)
     report_upload_max_pages: int = Field(default=5, ge=1, le=20)
