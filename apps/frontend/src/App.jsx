@@ -1,6 +1,6 @@
 import { useEffect, useReducer, useRef, useState } from 'react';
 import { Room, RoomEvent, Track } from 'livekit-client';
-import { Camera, CheckCircle, Menu, Mic, PhoneOff, Send, Upload, X } from 'lucide-react';
+import { Camera, CheckCircle, Clock3, FileText, Menu, MessageCircle, Mic, PhoneOff, Send, ShieldCheck, Stethoscope, Upload, X } from 'lucide-react';
 import { request as apiRequest, uploadReport } from './api';
 import DoctorConnect from './DoctorConnect.jsx';
 import VoiceActivity from './VoiceActivity.jsx';
@@ -264,7 +264,17 @@ export default function App() {
     ? { motion: 'thinking', text: 'Reading your report…' }
     : { motion: 'idle', text: 'Your report is ready. Let’s talk.' };
 
-  return <div ref={appShell} className={`app-shell${reportAdded ? ' report-added-layout' : ''}`}>
+  return <div className={`desktop-stage${reportAdded ? ' report-added' : ''}`}>
+    <aside className="desktop-guide desktop-guide-left" aria-label="How MediVoice works">
+      <p className="desktop-guide-label">Getting started</p>
+      <h2>How MediVoice works</h2>
+      <ol className="desktop-steps">
+        <li><FileText aria-hidden="true" /><span><strong>Add your report</strong><small>Choose a clear PDF or report image.</small></span></li>
+        <li><MessageCircle aria-hidden="true" /><span><strong>Ask by voice</strong><small>Speak in English or Hindi.</small></span></li>
+        <li><Stethoscope aria-hidden="true" /><span><strong>Understand the results</strong><small>Get a simple explanation of your report.</small></span></li>
+      </ol>
+    </aside>
+    <div ref={appShell} className={`app-shell${reportAdded ? ' report-added-layout' : ''}`}>
     <header><div className="brand-row"><button className="menu-button" aria-label="Open conversation text" aria-haspopup="dialog" onClick={() => conversationDialog.current?.showModal()}><Menu size={26} aria-hidden="true" /></button><div><span className="brand">MediVoice</span><p>Your report companion</p></div>{health?.demo_mode && <span className="demo-badge">Demo mode</span>}</div></header>
     <main>
       <div className="welcome"><h1>Understand your report</h1><p className="intro">Ask in Hindi or English.</p>
@@ -316,5 +326,14 @@ export default function App() {
         {Object.keys(timings).length > 0 && <div className="timings"><p>Timings exclude browser audio playback. Voice response is a server-side estimate.</p>{Object.entries(timings).map(([key, value]) => <p key={key}>{key.replaceAll('_', ' ')}: {(value / 1000).toFixed(2)}s</p>)}</div>}
       </details>
     </dialog><DoctorConnect state={care} dispatch={dispatchCare} live={connected} busy={careBusy} error={error} onStop={stop} activity={activity} /><div ref={audioHost} className="audio-host" />
+    </div>
+    <aside className="desktop-guide desktop-guide-right" aria-label="Report and session guidance">
+      <p className="desktop-guide-label">Before you begin</p>
+      <h2>Report guidelines</h2>
+      <div className="desktop-guide-item"><FileText aria-hidden="true" /><p><strong>Supported files</strong><span>PDF, JPG, PNG or WebP · up to 10 MB · up to 5 pages</span></p></div>
+      <div className="desktop-guide-item"><Clock3 aria-hidden="true" /><p><strong>Voice session</strong><span>Up to 3 minutes · ends after 60 seconds without speech</span></p></div>
+      <div className="desktop-guide-item"><ShieldCheck aria-hidden="true" /><p><strong>Your privacy</strong><span>Your report is used only for this conversation.</span></p></div>
+      <p className="desktop-guide-safety">MediVoice explains report information. It does not diagnose emergencies or replace a doctor.</p>
+    </aside>
   </div>;
 }

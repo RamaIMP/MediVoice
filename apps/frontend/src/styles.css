@@ -196,3 +196,41 @@ body { padding: 0; }
 .home-voice-option { gap: 8px; padding: 8px 12px; background: #edf7f3; border-color: #c2dcd2; font-size: 16px; }
 .home-voice-option span { text-align: left; line-height: 1.3; }
 .home-voice-option small { display: block; font-size: 12px; font-weight: 400; color: #526b65; margin-top: 2px; }
+
+/* Desktop-only companion panels use the otherwise empty space around the phone view. */
+.desktop-guide { display: none; }
+@media (min-width: 1000px) {
+  .desktop-stage {
+    width: min(1500px, 100%);
+    min-height: 100dvh;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: minmax(220px, 320px) var(--phone-width) minmax(220px, 320px);
+    align-items: center;
+    justify-content: center;
+    gap: clamp(32px, 6vw, 112px);
+  }
+  .desktop-stage .app-shell { grid-column: 2; }
+  .desktop-guide {
+    display: block;
+    padding: 28px;
+    border: 1px solid #d8e5e0;
+    border-radius: 22px;
+    background: #f8fbfa;
+    box-shadow: 0 10px 34px #193d3a0d;
+  }
+  .desktop-guide-left { grid-column: 1; }
+  .desktop-guide-right { grid-column: 3; }
+  .desktop-guide-label { margin: 0 0 6px; color: #39766d; font-size: 14px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+  .desktop-guide h2 { font-size: 24px; line-height: 1.25; }
+  .desktop-steps { display: grid; gap: 18px; padding: 0; margin: 24px 0 0; list-style: none; counter-reset: guide-step; }
+  .desktop-steps li { display: flex; align-items: flex-start; gap: 12px; counter-increment: guide-step; }
+  .desktop-steps li > svg { width: 38px; height: 38px; padding: 9px; border-radius: 12px; color: #0d716d; background: #e4f2ee; flex-shrink: 0; }
+  .desktop-steps strong, .desktop-guide-item strong { display: block; color: #214743; font-size: 16px; }
+  .desktop-steps small, .desktop-guide-item span { display: block; margin-top: 2px; color: #58736d; font-size: 14px; line-height: 1.45; }
+  .desktop-guide-item { display: flex; align-items: flex-start; gap: 11px; margin-top: 19px; }
+  .desktop-guide-item > svg { width: 21px; color: #2b756a; flex-shrink: 0; margin-top: 3px; }
+  .desktop-guide-item p { margin: 0; }
+  .desktop-guide-safety { margin: 22px 0 0; padding-top: 16px; border-top: 1px solid #dce8e4; color: #6a5733; font-size: 13px; line-height: 1.45; }
+  .desktop-stage.report-added .desktop-guide { visibility: hidden; }
+}
