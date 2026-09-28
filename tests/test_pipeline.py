@@ -56,10 +56,10 @@ async def test_progress_only_checks_report_when_needed(report_related, expected)
     ]
 
 
-@pytest.mark.parametrize("native", ["hi"])
-async def test_native_language_persists_until_explicit_switch(native):
-    turns = iter([(native, False), ("en", False), ("en", False), ("en", True)])
+async def test_clear_questions_switch_reply_language_within_a_session():
+    turns = iter([("hi", False), ("en", False), ("en", False), ("hi", False)])
     preferences = []
+    translation_targets = []
 
     def handler(request):
         body = json.loads(request.content)
@@ -73,15 +73,16 @@ async def test_native_language_persists_until_explicit_switch(native):
             return gemini_reply(json.dumps({"language": language,
                                            "explicit_language_switch": switch,
                                            "english_query": "Explain hemoglobin"}))
-        assert payload["target_language"] == native
+        translation_targets.append(payload["target_language"])
         return gemini_reply("Native answer")
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
         pipeline = Pipeline(config(), client)
-        for query, expected in [("मेरी रिपोर्ट समझाइए", native), ("hemoglobin level?", native),
-                                ("okay thanks", native), ("Please speak in English", "en")]:
+        for query, expected in [("मेरी रिपोर्ट समझाइए", "hi"), ("hemoglobin level?", "en"),
+                                ("okay thanks", "en"), ("मेरी रिपोर्ट समझाइए", "hi")]:
             assert (await pipeline.answer(query, {}))["language"] == expected
-        assert preferences == [None, native, native, native]
+        assert preferences == [None, "hi", "en", "en"]
+        assert translation_targets == ["hi", "hi"]
         assert Pipeline(config(), client).response_language is None
 
 

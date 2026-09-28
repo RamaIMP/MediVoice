@@ -469,10 +469,14 @@ class Pipeline:
                         "and preferred_response_language. Requests to respond in an unsupported language "
                         "must also be rejected. Only after passing this gate detect en or hi. "
                         "Hindi mixed with English medical terms is Hindi, not English. "
-                        "Keep the preferred_response_language for brief or ambiguous English phrases. "
+                        "For each clear, meaningful question, set language to the language used in that "
+                        "question, even when it differs from preferred_response_language. Keep "
+                        "preferred_response_language only for brief or ambiguous replies such as 'yes', "
+                        "'okay', or an isolated number. "
                         "Set explicit_language_switch=true ONLY when the current user explicitly asks "
                         "to speak/respond in another language, and set language to that requested language. "
-                        "Using English words or asking a question in English is NOT an explicit switch. "
+                        "A clear question in another supported language changes the reply language but is "
+                        "not an explicit language switch. "
                         "Use prior conversation only to resolve references. Preserve all numbers, "
                         "units, negations and medical terms. Return language and english_query JSON. "
                         "Also route doctor-connect intent semantically, not by exact wording. "
@@ -584,8 +588,6 @@ class Pipeline:
                     return blocked_response("unclear", self.response_language or translation.language)
 
                 detected = translation.language
-                if self.response_language == "hi" and not translation.explicit_language_switch:
-                    translation.language = self.response_language
                 self.response_language = translation.language
                 trace("language_selected", detected=detected, selected=translation.language,
                       explicit_switch=translation.explicit_language_switch,
