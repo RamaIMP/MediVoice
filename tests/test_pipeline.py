@@ -73,7 +73,8 @@ async def test_clear_questions_switch_reply_language_within_a_session():
             return gemini_reply(json.dumps({"language": language,
                                            "explicit_language_switch": switch,
                                            "english_query": "Explain hemoglobin"}))
-        translation_targets.append(payload["target_language"])
+        assert payload == {"text": "Answer"}
+        translation_targets.append("hi")
         return gemini_reply("Native answer")
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
@@ -116,7 +117,7 @@ async def test_pipeline_preserves_report_and_routes_language(language):
             return gemini_reply(
                 json.dumps({"language": language, "english_query": "Explain my result"})
             )
-        assert json.loads(body["contents"][0]["parts"][0]["text"])["target_language"] == language
+        assert json.loads(body["contents"][0]["parts"][0]["text"]) == {"text": "English answer"}
         return gemini_reply("Translated answer")
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:

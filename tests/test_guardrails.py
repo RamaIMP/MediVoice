@@ -61,7 +61,7 @@ async def test_translation_cannot_introduce_unreported_number():
         if request.url.host == "api.groq.com":
             return httpx.Response(200, json={"choices": [{"message": {"content": "Hemoglobin is 9.2."}}]})
         payload = json.loads(json.loads(request.content)["contents"][0]["parts"][0]["text"])
-        if "target_language" in payload:
+        if "text" in payload:
             return gemini_reply("हीमोग्लोबिन 99 है।")
         return gemini_reply(json.dumps({"language": "hi", "scope": "medical", "english_query": "Explain report"}))
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:

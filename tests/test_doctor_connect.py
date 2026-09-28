@@ -29,12 +29,33 @@ async def test_touch_steps_produce_spoken_guidance_and_preserve_back_navigation(
             result = await p.care_command(action, value, p.care_state["revision"])
             assert result["care_state"]["stage"] == stage
             assert phrase in result["text"]
+            assert "not a confirmed" not in result["text"].lower()
         for stage in ["patient", "time", "date", "search"]:
             result = await p.care_command("back", "", p.care_state["revision"])
             assert result["care_state"]["stage"] == stage
             assert result["care_state"]["patient"] == "Hari Sankar Prasad"
             assert result["care_state"]["time"] == "10:30"
             assert result["care_state"]["date"] == "2026-10-01"
+
+
+async def test_hindi_doctor_guidance_never_exposes_translation_metadata():
+    def handler(request):
+        body = json.loads(request.content)
+        payload = json.loads(body["contents"][0]["parts"][0]["text"])
+        assert payload["text"].startswith("You selected")
+        assert "target_language" not in payload
+        assert "Return only a natural Hindi translation" in body["systemInstruction"]["parts"][0]["text"]
+        return httpx.Response(200, json={"candidates": [{"content": {"parts": [{
+            "text": "आपने डॉक्टर आशा को चुना है। कृपया स्क्रीन पर आगे बढ़ें।"
+        }]}}]})
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        p = Pipeline(settings(), client)
+        p.response_language = "hi"
+        p.care_state, _ = transition(initial_state(), "search")
+        result = await p.care_command("select", "demo-1", p.care_state["revision"])
+    assert result["language"] == "hi"
+    assert result["text"] == "आपने डॉक्टर आशा को चुना है। कृपया स्क्रीन पर आगे बढ़ें।"
 
 
 def reply(action, value="", language="en"):
@@ -54,7 +75,9 @@ def test_booking_cannot_skip_confirmation_and_fallbacks():
             state, text = transition(state, action, value)
         assert state["stage"] == "review" and "on-screen button" in text
         state, text = transition(state, "yes")
-        assert state["stage"] == "handoff" and "Nothing has been sent or booked" in text
+        assert state["stage"] == "handoff"
+        assert "on tomorrow at 10 am" in text
+        assert "Nothing has been sent or booked" in text
 
 
 async def test_voice_and_touch_share_state_without_medical_model():

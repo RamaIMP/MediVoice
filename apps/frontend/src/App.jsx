@@ -331,7 +331,7 @@ export default function App() {
       <p className="desktop-guide-label">Before you begin</p>
       <h2>Report guidelines</h2>
       <div className="desktop-guide-item"><FileText aria-hidden="true" /><p><strong>Supported files</strong><span>PDF, JPG, PNG or WebP · up to 10 MB · up to 5 pages</span></p></div>
-      <div className="desktop-guide-item"><Clock3 aria-hidden="true" /><p><strong>Voice session</strong><span>Up to 3 minutes · ends after 60 seconds without speech</span></p></div>
+      <div className="desktop-guide-item"><Clock3 aria-hidden="true" /><p><strong>Voice session</strong><span>Up to 5 minutes · ends after 2 minutes without speech</span></p></div>
       <div className="desktop-guide-item"><ShieldCheck aria-hidden="true" /><p><strong>Your privacy</strong><span>Your report is used only for this conversation.</span></p></div>
       <p className="desktop-guide-safety">MediVoice explains report information. It does not diagnose emergencies or replace a doctor.</p>
     </aside>

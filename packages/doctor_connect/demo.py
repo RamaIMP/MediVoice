@@ -33,13 +33,14 @@ def prompt(state):
         return f"You entered {state['patient']}. Please review the request on screen."
     if stage in ("date", "time", "patient"):
         return {"date": f"You selected {doctor['name']}. Please choose your preferred date on screen.",
-                "time": "Please choose your preferred time on screen. This is not a confirmed slot.",
+                "time": "Please choose your preferred time on screen.",
                 "patient": "Please enter the patient's name on screen, then tap Review details."}[stage]
     if stage == "review":
         return (f"Your request for {doctor['name']} on {state['date']} at {state['time']} is ready. "
                 "Please tap the on-screen button to continue.")
-    return (f"Your {doctor['channel']} request preview is ready on screen. "
-            "This is a simulated handoff. Nothing has been sent or booked; a real clinic must confirm.")
+    return (f"Your request for {doctor['name']} on {state['date']} at {state['time']} is ready. "
+            f"The {doctor['channel']} request preview is on screen. This is a simulated handoff; "
+            "Nothing has been sent or booked, and a real clinic must confirm.")
 
 
 def transition(current, action, value=""):
